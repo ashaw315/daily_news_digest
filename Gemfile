@@ -42,6 +42,23 @@ gem "bootsnap", require: false
 # Added gems
 gem "devise", "~> 4.9"
 gem "sidekiq", "~> 7.0"
+gem 'sassc-rails'
+
+# Background processing
+gem 'sidekiq-failures'
+gem 'whenever', require: false
+
+# News fetching and parsing
+gem 'feedjira'                # For RSS feed parsing
+gem 'httparty'                # For API requests
+gem 'nokogiri'                # For HTML parsing
+
+# Optional - uncomment if you want to check robots.txt rules
+# gem 'robotstxt-parser'      # For checking robots.txt rules
+
+# Text processing and categorization
+gem 'stopwords-filter'        # For removing stopwords
+gem 'classifier-reborn'       # For text classification
 
 group :development, :test do
   # See https://guides.rubyonrails.org/debugging_rails_applications.html#debugging-with-the-debug-gem

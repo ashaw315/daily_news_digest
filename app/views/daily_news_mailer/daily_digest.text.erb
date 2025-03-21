@@ -1,0 +1,41 @@
+Daily News Digest - <%= Date.today.strftime('%B %d, %Y') %>
+
+Hello <%= @user.name || @user.email.split('@').first %>!
+
+Here's your personalized news digest based on your preferences.
+
+NEWS OF THE DAY BRIEF:
+<% @news_brief.each do |article| %>
+* <%= article.title %> - <%= article.source %>
+<% end %>
+
+TRENDING TOPICS:
+<% @topics.each do |topic| %>
+* <%= topic.capitalize %>
+<% end %>
+
+TOP 10 ARTICLES OF THE DAY:
+<% @top_articles.each do |article| %>
+- <%= article.title %>
+  <%= truncate(article.description, length: 100) %>
+  <%= article.source %> | <%= article.published_at.strftime('%b %d, %Y') %>
+  Read more: <%= article.url %>
+
+<% end %>
+
+<% @articles_by_topic.each do |topic, articles| %>
+<%= topic.upcase %> NEWS:
+<% articles.first(5).each do |article| %>
+- <%= article.title %>
+  <%= truncate(article.description, length: 100) %>
+  <%= article.source %> | <%= article.published_at.strftime('%b %d, %Y') %>
+  Read more: <%= article.url %>
+
+<% end %>
+<% end %>
+
+---
+Manage Preferences: <%= edit_preferences_url %>
+Unsubscribe: <%= unsubscribe_url(token: @user.unsubscribe_token) %>
+
+© <%= Date.today.year %> Your News App. All rights reserved.

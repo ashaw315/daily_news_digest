@@ -38,5 +38,10 @@ module DailyNewsDigest
 
     # Don't generate system test files.
     config.generators.system_tests = nil
+    config.active_job.queue_adapter = :sidekiq
+    config.assets.enabled = true
+
+    # Add app/services to autoload paths
+    config.autoload_paths += %W(#{config.root}/app/services)
   end
 end

@@ -1,0 +1,92 @@
+<div data-controller="preferences">
+  <div class="preferences-form">
+    <h1>Manage Your Preferences</h1>
+
+    <%= form_with(model: @user, url: preferences_path, method: :patch, local: true) do |f| %>
+      <% if @user.errors.any? %>
+        <div class="error-messages">
+          <h2><%= pluralize(@user.errors.count, "error") %> prevented your preferences from being saved:</h2>
+          <ul>
+            <% @user.errors.full_messages.each do |msg| %>
+              <li><%= msg %></li>
+            <% end %>
+          </ul>
+        </div>
+      <% end %>
+
+      <div class="preferences-section">
+        <h2>Topics of Interest</h2>
+        <% User::VALID_PREFERENCES['topics'].each do |topic| %>
+          <div class="checkbox-field">
+            <%= check_box_tag "user[preferences][topics][]",
+                            topic.downcase,
+                            @user.selected_topics.include?(topic.downcase),
+                            id: "topic_#{topic.downcase}" %>
+            <%= label_tag "topic_#{topic.downcase}", topic %>
+          </div>
+        <% end %>
+      </div>
+
+      <div class="preferences-section">
+        <h2>News Sources</h2>
+        <p class="help-text">Select your preferred news sources. The first one will be used as your primary source for the "News of the Day" brief.</p>
+        
+        <div class="checkbox-group">
+          <% @news_sources.each do |source| %>
+            <div class="checkbox-field">
+              <%= check_box_tag "user[preferences][sources][]",
+                              source,
+                              @user.preferences&.dig('sources')&.include?(source),
+                              id: "source_#{source.parameterize}" %>
+              <%= label_tag "source_#{source.parameterize}", source %>
+            </div>
+          <% end %>
+        </div>
+      </div>
+
+      <div class="form-section">
+        <h3>Email Frequency</h3>
+        <div class="radio-group">
+          <% User::VALID_PREFERENCES['frequency'].each do |freq| %>
+            <div class="radio-item">
+              <%= radio_button_tag "user[preferences][frequency]",
+                                 freq,
+                                 @user.email_frequency == freq,
+                                 id: "frequency_#{freq.downcase}" %>
+              <%= label_tag "frequency_#{freq.downcase}", freq.titleize %>
+            </div>
+          <% end %>
+        </div>
+      </div>
+
+      <div class="form-actions">
+        <%= f.submit "Save Preferences", class: "button primary" %>
+        <button type="button" 
+                class="reset-form button" 
+                data-action="click->preferences#showResetModal">
+          Reset Preferences
+        </button>
+      </div>
+    <% end %>
+  </div>
+
+  <div id="reset-modal" 
+       class="modal" 
+       style="display: none;"
+       data-preferences-target="modal">
+    <div class="modal-content">
+      <h3>Reset Preferences</h3>
+      <p>Are you sure? This will clear all your preferences.</p>
+      <div class="modal-actions">
+        <%= form_with(url: reset_preferences_path, method: :post, local: true) do |form| %>
+          <%= form.submit "Yes, Reset", class: "button danger" %>
+        <% end %>
+        <button type="button" 
+                class="button secondary" 
+                data-action="preferences#hideResetModal">
+          Cancel
+        </button>
+      </div>
+    </div>
+  </div>
+</div>

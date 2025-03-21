@@ -1,0 +1,23 @@
+<div class="container">
+  <div class="jumbotron mt-4">
+    <h1>Welcome to News Digest</h1>
+    <p class="lead">Your personalized news aggregator</p>
+    
+    <% if user_signed_in? %>
+      <p>You are signed in as <%= current_user.email %></p>
+      <%= link_to "View Dashboard", dashboard_path, class: "btn btn-primary" %>
+    <% else %>
+      <p>Please sign in to access your personalized news</p>
+      <%= link_to "Sign In", new_user_session_path, class: "btn btn-primary" %>
+      <%= link_to "Sign Up", new_user_registration_path, class: "btn btn-outline-primary ml-2" %>
+    <% end %>
+  </div>
+  
+  <% if flash[:notice] %>
+    <div class="alert alert-success mt-3"><%= flash[:notice] %></div>
+  <% end %>
+  
+  <% if flash[:alert] %>
+    <div class="alert alert-danger mt-3"><%= flash[:alert] %></div>
+  <% end %>
+</div>

@@ -68,6 +68,7 @@ Your output should include:
 - The migration files.
 - The model files with validations.
 - RSpec tests verifying the schema.
+
 Prompt 4: Implementing User Preferences Management
 Task:
 - Build a user settings page that allows users to select topics

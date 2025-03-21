@@ -33,3 +33,21 @@
 
 # Ignore master key for decrypting credentials and more.
 /config/master.key
+
+# Ignore database.yml if you plan to use different configurations
+/config/database.yml
+
+# Ignore environment variables
+.env
+.env.*
+
+# Ignore node modules
+/node_modules
+
+# Ignore yarn files
+/yarn-error.log
+yarn-debug.log*
+.yarn-integrity
+
+# Ignore coverage reports
+/coverage

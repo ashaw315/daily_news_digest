@@ -5,6 +5,9 @@ require_relative '../config/environment'
 # Prevent database truncation if the environment is production
 abort("The Rails environment is running in production mode!") if Rails.env.production?
 require 'rspec/rails'
+require 'capybara/rspec'
+require 'devise'
+require 'database_cleaner/active_record'
 # Add additional requires below this line. Rails is not loaded until this point!
 
 # Requires supporting ruby files with custom matchers and macros, etc, in
@@ -62,4 +65,58 @@ RSpec.configure do |config|
   config.filter_rails_from_backtrace!
   # arbitrary gems may also be filtered via:
   # config.filter_gems_from_backtrace("gem name")
+  Shoulda::Matchers.configure do |config|
+    config.integrate do |with|
+      with.test_framework :rspec
+      with.library :rails
+    end
+  end
+  config.include Devise::Test::IntegrationHelpers, type: :feature
+  config.include Warden::Test::Helpers
+  config.include FactoryBot::Syntax::Methods
+  config.include Devise::Test::IntegrationHelpers, type: :request
+  config.include Devise::Test::ControllerHelpers, type: :controller
+
+  config.before(:each, type: :feature) do
+    # Reset Capybara
+    Capybara.reset_sessions!
+    # Reset Rails
+    Rails.application.reloader.reload!
+  end
+
+  config.after(:each, type: :feature) do
+    Capybara.reset_sessions!
+  end
+
+  # Only use database_cleaner for JS tests
+  config.before(:each, js: true) do
+    DatabaseCleaner.strategy = :truncation
+    DatabaseCleaner.start
+  end
+  
+  config.after(:each, js: true) do
+    DatabaseCleaner.clean
+  end
+end
+
+# Configure Capybara
+Capybara.default_driver = :rack_test
+Capybara.javascript_driver = :chrome_headless
+
+# Increase timeout for JS tests
+Capybara.default_max_wait_time = 5
+
+# To see the browser in action (not headless)
+Capybara.configure do |config|
+  config.default_driver = :selenium_chrome
+  config.default_max_wait_time = 5 # seconds to wait for elements
+end
+
+Capybara.register_driver :chrome_headless do |app|
+  options = Selenium::WebDriver::Chrome::Options.new
+  options.add_argument('--headless')
+  options.add_argument('--disable-gpu')
+  options.add_argument('--no-sandbox')
+  options.add_argument('--disable-dev-shm-usage')
+  Capybara::Selenium::Driver.new(app, browser: :chrome, options: options)
 end
