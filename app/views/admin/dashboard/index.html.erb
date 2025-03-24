@@ -1,0 +1,41 @@
+<h1>Admin Dashboard</h1>
+
+<div class="dashboard-stats">
+  <div class="stat-card">
+    <h3>Users</h3>
+    <div class="stat-value"><%= @user_count %></div>
+  </div>
+  
+  <div class="stat-card">
+    <h3>Articles</h3>
+    <div class="stat-value"><%= @article_count %></div>
+  </div>
+  
+  <div class="stat-card">
+    <h3>Sources</h3>
+    <div class="stat-value"><%= @source_count %></div>
+  </div>
+</div>
+
+<h2>Email Metrics</h2>
+<div class="dashboard-stats">
+  <div class="stat-card">
+    <h3>Sent</h3>
+    <div class="stat-value"><%= @email_metrics[:sent] %></div>
+  </div>
+  
+  <div class="stat-card">
+    <h3>Opened</h3>
+    <div class="stat-value"><%= @email_metrics[:opened] %></div>
+  </div>
+  
+  <div class="stat-card">
+    <h3>Clicked</h3>
+    <div class="stat-value"><%= @email_metrics[:clicked] %></div>
+  </div>
+  
+  <div class="stat-card">
+    <h3>Failed</h3>
+    <div class="stat-value"><%= @email_metrics[:failed] %></div>
+  </div>
+</div> 

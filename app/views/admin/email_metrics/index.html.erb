@@ -1,0 +1,62 @@
+<h1>Email Metrics</h1>
+
+<div class="card mb-4">
+  <div class="card-header">
+    <h3>Summary</h3>
+  </div>
+  <div class="card-body">
+    <div class="row">
+      <div class="col-md-3">
+        <div class="metric-card">
+          <h4>Sent</h4>
+          <div class="metric-value"><%= @summary[:sent] %></div>
+        </div>
+      </div>
+      <div class="col-md-3">
+        <div class="metric-card">
+          <h4>Opened</h4>
+          <div class="metric-value"><%= @summary[:opened] %></div>
+          <div class="metric-rate"><%= (@summary[:opened].to_f / @summary[:sent] * 100).round(1) %>% open rate</div>
+        </div>
+      </div>
+      <div class="col-md-3">
+        <div class="metric-card">
+          <h4>Clicked</h4>
+          <div class="metric-value"><%= @summary[:clicked] %></div>
+          <div class="metric-rate"><%= (@summary[:clicked].to_f / @summary[:opened] * 100).round(1) %>% click rate</div>
+        </div>
+      </div>
+      <div class="col-md-3">
+        <div class="metric-card">
+          <h4>Failed</h4>
+          <div class="metric-value"><%= @summary[:failed] %></div>
+          <div class="metric-rate"><%= (@summary[:failed].to_f / @summary[:sent] * 100).round(1) %>% failure rate</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<h2>Recent Email Activity</h2>
+<table class="table">
+  <thead>
+    <tr>
+      <th>User</th>
+      <th>Email Type</th>
+      <th>Subject</th>
+      <th>Status</th>
+      <th>Sent At</th>
+    </tr>
+  </thead>
+  <tbody>
+    <% @email_metrics.each do |metric| %>
+      <tr>
+        <td><%= metric.user.email %></td>
+        <td><%= metric.email_type %></td>
+        <td><%= metric.subject %></td>
+        <td><span class="badge badge-<%= metric.status == 'failed' ? 'danger' : (metric.status == 'sent' ? 'info' : 'success') %>"><%= metric.status %></span></td>
+        <td><%= metric.sent_at&.strftime('%B %d, %Y %H:%M') || metric.created_at.strftime('%B %d, %Y %H:%M') %></td>
+      </tr>
+    <% end %>
+  </tbody>
+</table> 

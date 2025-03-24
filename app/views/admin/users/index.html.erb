@@ -1,0 +1,30 @@
+<h1>Users</h1>
+
+<table class="table">
+  <thead>
+    <tr>
+      <th>Email</th>
+      <th>Sign Up Date</th>
+      <% if User.column_names.include?('last_sign_in_at') %>
+        <th>Last Sign In</th>
+      <% end %>
+      <th>Admin</th>
+      <th>Actions</th>
+    </tr>
+  </thead>
+  <tbody>
+    <% @users.each do |user| %>
+      <tr>
+        <td><%= user.email %></td>
+        <td><%= user.created_at.strftime('%B %d, %Y') %></td>
+        <% if User.column_names.include?('last_sign_in_at') %>
+          <td><%= user.last_sign_in_at&.strftime('%B %d, %Y') || 'Never' %></td>
+        <% end %>
+        <td><%= user.admin? ? 'Yes' : 'No' %></td>
+        <td>
+          <%= link_to 'View', admin_user_path(user), class: 'btn btn-sm btn-info' %>
+        </td>
+      </tr>
+    <% end %>
+  </tbody>
+</table> 

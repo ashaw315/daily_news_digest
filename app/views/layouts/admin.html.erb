@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>NewsAggregator Admin</title>
+  <%= csrf_meta_tags %>
+  <%= csp_meta_tag %>
+
+  <%= stylesheet_link_tag 'application', media: 'all', 'data-turbolinks-track': 'reload' %>
+  <%= javascript_include_tag 'application', 'data-turbolinks-track': 'reload' %>
+</head>
+<body>
+  <div class="admin-container">
+    <div class="admin-sidebar">
+      <div class="admin-sidebar-header">
+        <h2>Admin Panel</h2>
+      </div>
+      <nav class="admin-nav">
+        <ul>
+          <li><%= link_to 'Dashboard', admin_dashboard_path %></li>
+          <li><%= link_to 'Sources', admin_sources_path %></li>
+          <li><%= link_to 'Users', admin_users_path %></li>
+          <li><%= link_to 'Email Metrics', admin_email_metrics_path %></li>
+          <li><%= link_to 'Back to Site', root_path %></li>
+          <li><%= link_to 'Sign Out', destroy_user_session_path, method: :delete %></li>
+        </ul>
+      </nav>
+    </div>
+    <div class="admin-content">
+      <% if notice %>
+        <div class="alert alert-success"><%= notice %></div>
+      <% end %>
+      <% if alert %>
+        <div class="alert alert-danger"><%= alert %></div>
+      <% end %>
+      
+      <%= yield %>
+    </div>
+  </div>
+</body>
+</html> 

@@ -57,7 +57,7 @@ gem 'nokogiri'                # For HTML parsing
 # gem 'robotstxt-parser'      # For checking robots.txt rules
 
 # Text processing and categorization
-gem 'stopwords-filter'        # For removing stopwords
+gem 'stopwords-filter', require: 'stopwords'        # For removing stopwords
 gem 'classifier-reborn'       # For text classification
 
 group :development, :test do

@@ -18,6 +18,13 @@ Rails.application.routes.draw do
   # Defines the root path route ("/")
   # root "posts#index"
 
-  # Unsubscribe route
   get 'unsubscribe/:token', to: 'unsubscribe#process_unsubscribe', as: 'unsubscribe'
+
+  # Admin routes
+  namespace :admin do
+    get 'dashboard', to: 'dashboard#index'
+    resources :sources
+    resources :users, only: [:index, :show]
+    resources :email_metrics, only: [:index]
+  end
 end
