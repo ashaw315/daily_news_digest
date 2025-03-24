@@ -20,9 +20,15 @@ class DailyEmailJob < ApplicationJob
   end
   
   def perform(user)
+    # Skip if user is not subscribed
+    return unless user.is_subscribed
+    
+    # Skip if user prefers weekly emails
+    return unless user.email_frequency == 'daily'
+    
     Rails.logger.info("Sending daily news digest to user #{user.id} (#{user.email})")
     
-    # Fetch articles based on user preferences
+    # Fetch articles based on user preferences (with default days: 1)
     articles = ArticleFetcher.fetch_for_user(user)
     
     # Send the email
@@ -30,4 +36,4 @@ class DailyEmailJob < ApplicationJob
     
     Rails.logger.info("Successfully sent daily news digest to user #{user.id} (#{user.email})")
   end
-end 
+end

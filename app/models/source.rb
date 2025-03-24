@@ -1,9 +1,11 @@
 class Source < ApplicationRecord
-  validates :name, presence: true
+  validates :name, presence: true, uniqueness: true
   validates :url, presence: true
   validates :source_type, presence: true, inclusion: { in: ['rss', 'api', 'scrape'] }
   
   serialize :selectors, coder: JSON
+  
+  scope :active, -> { where(active: true) }
   
   def self.source_types
     [
@@ -21,4 +23,4 @@ class Source < ApplicationRecord
       selectors: selectors
     }
   end
-end 
+end

@@ -8,6 +8,9 @@ class User < ApplicationRecord
   has_one :preferences, dependent: :destroy
   has_many :email_metrics, dependent: :destroy
   
+  has_many :user_topics, dependent: :destroy
+  has_many :topics, through: :user_topics
+  
   validates :email, presence: true, uniqueness: true
   
   before_create :generate_unsubscribe_token
@@ -18,7 +21,7 @@ class User < ApplicationRecord
   end
   
   def selected_topics
-    preferences&.topics || []
+    topics.pluck(:name)
   end
 
   def selected_sources
@@ -30,8 +33,8 @@ class User < ApplicationRecord
   end
 
   def reset_preferences!
+    user_topics.destroy_all
     preferences.update!(
-      topics: [],
       sources: [],
       email_frequency: 'daily'
     )
@@ -50,7 +53,6 @@ class User < ApplicationRecord
 
   def create_default_preferences
     create_preferences!(
-      topics: [],
       sources: [],
       email_frequency: 'daily',
       dark_mode: false

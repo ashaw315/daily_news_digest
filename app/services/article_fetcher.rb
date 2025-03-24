@@ -1,14 +1,17 @@
 class ArticleFetcher
-  def self.fetch_for_user(user)
-    # Get user preferences
-    topics = user.preferences&.dig('topics') || []
-    preferred_source = user.preferred_news_source
+  def self.fetch_for_user(user, days: 1)
+    # Get user's selected topics
+    topics = user.topics.pluck(:name)
+    
+    # Get user's preferred source (if any)
+    preferred_source = user.preferences&.preferred_source
     
     # Create options for the fetcher
     options = {
       topics: topics.presence,
       preferred_source: preferred_source,
-      max_articles: 10
+      max_articles: 10,
+      days: days
     }
     
     # Fetch personalized articles
@@ -25,4 +28,4 @@ class ArticleFetcher
       article
     end
   end
-end 
+end

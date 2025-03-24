@@ -61,7 +61,6 @@ ActiveRecord::Schema[7.1].define(version: 2025_03_22_013407) do
 
   create_table "preferences", force: :cascade do |t|
     t.bigint "user_id", null: false
-    t.text "topics"
     t.string "email_frequency", default: "daily"
     t.boolean "dark_mode", default: false
     t.datetime "created_at", null: false
@@ -78,6 +77,24 @@ ActiveRecord::Schema[7.1].define(version: 2025_03_22_013407) do
     t.text "selectors"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+  end
+
+  create_table "topics", force: :cascade do |t|
+    t.string "name", null: false
+    t.boolean "active", default: true
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["name"], name: "index_topics_on_name", unique: true
+  end
+
+  create_table "user_topics", force: :cascade do |t|
+    t.bigint "user_id", null: false
+    t.bigint "topic_id", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["topic_id"], name: "index_user_topics_on_topic_id"
+    t.index ["user_id", "topic_id"], name: "index_user_topics_on_user_id_and_topic_id", unique: true
+    t.index ["user_id"], name: "index_user_topics_on_user_id"
   end
 
   create_table "users", force: :cascade do |t|
@@ -106,4 +123,6 @@ ActiveRecord::Schema[7.1].define(version: 2025_03_22_013407) do
   add_foreign_key "email_metrics", "users"
   add_foreign_key "email_trackings", "users"
   add_foreign_key "preferences", "users"
+  add_foreign_key "user_topics", "topics"
+  add_foreign_key "user_topics", "users"
 end

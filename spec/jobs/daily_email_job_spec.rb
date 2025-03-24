@@ -3,12 +3,24 @@ require 'rails_helper'
 RSpec.describe DailyEmailJob, type: :job do
   include ActiveJob::TestHelper
   
-  let(:user) { create(:user, preferences: { 'topics' => ['technology'], 'frequency' => 'daily' }, is_subscribed: true) }
-  let(:articles) { [double('Article', title: 'Test', description: 'Test', source: 'Test', url: 'http://test.com', published_at: Time.now, topic: 'technology')] }
+  # Create the user without setting preferences directly
+  let(:user) { create(:user, is_subscribed: true) }
+  
+  # Create a technology topic
+  let!(:technology_topic) { create(:topic, name: 'technology') }
   
   before do
+    # Associate the user with the technology topic
+    user.topics << technology_topic
+    
+    # Set the email frequency
+    user.preferences.update!(email_frequency: 'daily')
+    
+    # Mock the ArticleFetcher
     allow(ArticleFetcher).to receive(:fetch_for_user).and_return(articles)
   end
+  
+  let(:articles) { [double('Article', title: 'Test', description: 'Test', source: 'Test', url: 'http://test.com', published_at: Time.now, topic: 'technology')] }
   
   describe "#perform" do
     it "sends an email to the user" do
@@ -55,4 +67,4 @@ RSpec.describe DailyEmailJob, type: :job do
       end
     end
   end
-end 
+end
