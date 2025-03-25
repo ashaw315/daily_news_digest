@@ -39,6 +39,8 @@ gem "bootsnap", require: false
 # Use Active Storage variants [https://guides.rubyonrails.org/active_storage_overview.html#transforming-images]
 # gem "image_processing", "~> 1.2"
 
+gem 'dotenv-rails', groups: [:development, :test]
+
 # Added gems
 gem "devise", "~> 4.9"
 gem "sidekiq", "~> 7.0"
@@ -67,6 +69,7 @@ group :development, :test do
   gem "factory_bot_rails"
   gem "faker"
   gem "pry-rails"
+  gem 'letter_opener'
 end
 
 group :development do

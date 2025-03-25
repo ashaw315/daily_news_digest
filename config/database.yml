@@ -17,7 +17,7 @@ default: &default
   encoding: unicode
   # For details on connection pooling, see Rails configuration guide
   # https://guides.rubyonrails.org/configuring.html#database-pooling
-  pool: 10
+  pool: 15
   reaping_frequency: 10
 
 development:
@@ -57,6 +57,7 @@ development:
 test:
   <<: *default
   database: daily_news_digest_test
+  pool: 15 
 
 # As with config/credentials.yml, you never want to store sensitive information,
 # like your database password, in your source code. If your source code is

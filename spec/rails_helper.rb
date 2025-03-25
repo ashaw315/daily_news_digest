@@ -10,6 +10,15 @@ require 'devise'
 require 'database_cleaner/active_record'
 # Add additional requires below this line. Rails is not loaded until this point!
 
+class ActiveRecord::Base
+  mattr_accessor :shared_connection
+  @@shared_connection = nil
+
+  def self.connection
+    @@shared_connection || ConnectionPool::Wrapper.new(size: 1) { retrieve_connection }
+  end
+end
+
 # Requires supporting ruby files with custom matchers and macros, etc, in
 # spec/support/ and its subdirectories. Files matching `spec/**/*_spec.rb` are
 # run as spec files by default. This means that files in spec/support that end
@@ -76,6 +85,13 @@ RSpec.configure do |config|
   config.include FactoryBot::Syntax::Methods
   config.include Devise::Test::IntegrationHelpers, type: :request
   config.include Devise::Test::ControllerHelpers, type: :controller
+  config.include ActiveJob::TestHelper
+  config.use_transactional_fixtures = true
+  
+  config.before(:each, type: :feature) do
+    # Forces all threads to share the same connection
+    ActiveRecord::Base.shared_connection = ActiveRecord::Base.connection
+  end
 
   config.before(:each, type: :feature) do
     # Reset Capybara

@@ -97,6 +97,8 @@ GEM
       rack-test (>= 0.6.3)
       regexp_parser (>= 1.5, < 3.0)
       xpath (~> 3.2)
+    childprocess (5.1.0)
+      logger (~> 1.5)
     chronic (0.10.2)
     classifier-reborn (2.3.0)
       fast-stemmer (~> 1.0)
@@ -121,6 +123,10 @@ GEM
       responders
       warden (~> 1.2.3)
     diff-lcs (1.6.0)
+    dotenv (3.1.7)
+    dotenv-rails (3.1.7)
+      dotenv (= 3.1.7)
+      railties (>= 6.1)
     drb (2.2.1)
     error_highlight (0.7.0)
     erubi (1.13.1)
@@ -163,6 +169,12 @@ GEM
     jbuilder (2.13.0)
       actionview (>= 5.0.0)
       activesupport (>= 5.0.0)
+    launchy (3.1.1)
+      addressable (~> 2.8)
+      childprocess (~> 5.0)
+      logger (~> 1.6)
+    letter_opener (1.10.0)
+      launchy (>= 2.2, < 4)
     logger (1.6.6)
     loofah (2.24.0)
       crass (~> 1.0.2)
@@ -373,6 +385,7 @@ DEPENDENCIES
   database_cleaner-active_record
   debug
   devise (~> 4.9)
+  dotenv-rails
   error_highlight (>= 0.4.0)
   factory_bot_rails
   faker
@@ -380,6 +393,7 @@ DEPENDENCIES
   httparty
   importmap-rails
   jbuilder
+  letter_opener
   nokogiri
   pg (~> 1.1)
   pry-rails
