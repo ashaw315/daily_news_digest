@@ -90,5 +90,6 @@ group :test do
   gem "selenium-webdriver"
   gem "shoulda-matchers"
   gem "database_cleaner-active_record"
+  gem "rails-controller-testing"
 end
 
