@@ -2,7 +2,15 @@
   <div class="preferences-form">
     <h1>Manage Your Preferences</h1>
 
+    <% if flash[:alert].present? %>
+      <div class="alert alert-danger">
+        <%= flash[:alert] %>
+      </div>
+    <% end %>
+
     <%= form_with(model: @user, url: preferences_path, method: :patch, local: true) do |f| %>
+      <%= hidden_field_tag "user[topic_ids][]", nil %>
+      <%= hidden_field_tag "user[news_source_ids][]", nil %>
       <% if @user.errors.any? %>
         <div class="error-messages">
           <h2><%= pluralize(@user.errors.count, "error") %> prevented your preferences from being saved:</h2>
@@ -14,48 +22,51 @@
         </div>
       <% end %>
 
-      <div class="preferences-section">
-        <h2>Topics of Interest</h2>
-        <% Topic.active.each do |topic| %>
-          <div class="checkbox-field">
-            <%= check_box_tag "user[topic_ids][]",
-                            topic.id,
-                            @user.topics.include?(topic),
-                            id: "topic_#{topic.id}" %>
-            <%= label_tag "topic_#{topic.id}", topic.name.capitalize %>
-          </div>
-        <% end %>
-      </div>
-
-      <div class="preferences-section">
-        <h2>News Sources</h2>
-        <p class="help-text">Select your preferred news sources. The first one will be used as your primary source for the "News of the Day" brief.</p>
-        
-        <div class="checkbox-group">
-          <% @news_sources.each do |source| %>
-            <div class="checkbox-field">
-              <%= check_box_tag "user[preferences][sources][]",
-                              source,
-                              @user.preferences&.dig('sources')&.include?(source),
-                              id: "source_#{source.parameterize}" %>
-              <%= label_tag "source_#{source.parameterize}", source %>
-            </div>
-          <% end %>
+    <div class="preferences-section">
+      <h2>Topics of Interest</h2>
+      <p class="helper-text">Please select at least 3 topics</p>
+      <% @topics.each do |topic| %>
+        <div class="checkbox-field">
+          <%= check_box_tag "user[topic_ids][]",
+                          topic.id,
+                          @user.topics.include?(topic),
+                          id: "topic_#{topic.name.downcase.gsub(' ', '_')}" %>
+          <%= label_tag "topic_#{topic.name.downcase.gsub(' ', '_')}", topic.name %>
         </div>
-      </div>
+      <% end %>
+    </div>
 
-      <div class="form-section">
-        <h3>Email Frequency</h3>
+    <div class="preferences-section">
+      <h2>News Sources</h2>
+      <p class="helper-text">Please select at least 1 news source</p>
+      <% @news_sources.each do |source| %>
+        <div class="checkbox-field">
+          <%= check_box_tag "user[news_source_ids][]",
+                          source.id,
+                          @user.news_sources.include?(source),
+                          id: "source_#{source.name.downcase.gsub(' ', '_')}" %>
+          <%= label_tag "source_#{source.name.downcase.gsub(' ', '_')}", source.name %>
+        </div>
+      <% end %>
+    </div>
+
+      <div class="preferences-section">
+        <h2>Delivery Frequency</h2>
         <div class="radio-group">
-          <% ['daily', 'weekly'].each do |freq| %>
-            <div class="radio-item">
-              <%= radio_button_tag "user[preferences][frequency]",
-                                 freq,
-                                 @user.email_frequency == freq,
-                                 id: "frequency_#{freq.downcase}" %>
-              <%= label_tag "frequency_#{freq.downcase}", freq.titleize %>
-            </div>
-          <% end %>
+          <div class="radio-field">
+            <%= radio_button_tag "user[preferences_attributes][email_frequency]", 
+                                "daily", 
+                                @user.preferences&.email_frequency == "daily",
+                                id: "frequency_daily" %>
+            <%= label_tag "frequency_daily", "Daily" %>
+          </div>
+          <div class="radio-field">
+            <%= radio_button_tag "user[preferences_attributes][email_frequency]", 
+                                "weekly", 
+                                @user.preferences&.email_frequency == "weekly",
+                                id: "frequency_weekly" %>
+            <%= label_tag "frequency_weekly", "Weekly" %>
+          </div>
         </div>
       </div>
 

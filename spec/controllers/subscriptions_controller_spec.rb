@@ -6,6 +6,7 @@ RSpec.describe SubscriptionsController, type: :controller do
       let(:user) { create(:user, is_subscribed: true) }
       
       before do
+        # binding.pry
         get :unsubscribe, params: { token: user.unsubscribe_token }
         user.reload
       end

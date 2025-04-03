@@ -3,99 +3,130 @@ require 'rails_helper'
 RSpec.describe "User Preferences Management", type: :feature do
   let(:user) { create(:user) }
 
-  before do
-    sign_in user
-    visit edit_preferences_path
-  end
-
   describe "editing preferences" do
     before do
-      user.update!(preferences: {
-        'topics' => ['technology', 'science'],
-        'sources' => ['news_api'],
-        'frequency' => 'weekly'
-      })
-      visit edit_preferences_path
+      # Create topics
+      @technology_topic = Topic.create!(name: 'technology', active: true)
+      @science_topic = Topic.create!(name: 'science', active: true)
+      @politics_topic = Topic.create!(name: 'politics', active: true)
+  
+      # Create news sources
+      @cnn_source = NewsSource.create!(name: 'CNN', format: 'api', active: true)
+      @bbc_source = NewsSource.create!(name: 'BBC', format: 'rss', active: true)
+      @reuters_source = NewsSource.create!(name: 'Reuters', format: 'web_scraped', active: true)
+  
+      sign_in user
     end
 
-    it "allows users to update their preferences" do
-      # Debug output
-      puts "User preferences: #{user.reload.preferences.inspect}"
-      puts "Checkbox states: #{page.all('input[type="checkbox"]').map { |cb| [cb['id'], cb['checked']] }.inspect}"
+    it "requires at least 3 topics and 1 source" do
+      visit edit_preferences_path
       
-      expect(find("#topic_technology")).to be_checked
-      expect(find("#topic_science")).to be_checked
+      uncheck "topic_#{@politics_topic.name.downcase}"
+    
+      click_button "Save Preferences"
+
+      # Expect error message about topics
+      expect(page).to have_content("You must select at least 3 topics")
+
+      # binding.pry
+
+      # Check the third topic again
+      check "topic_#{@politics_topic.name.downcase}"
       
-      # Check news sources
-      check "source_news_api"
+      # Now uncheck the news source
+      uncheck "source_#{@cnn_source.name.downcase}"
       
-      # Select frequency
-      choose "frequency_daily"
+      # Try to save with no news sources
+      click_button "Save Preferences"
+
+      # Expect error message about news sources
+      expect(page).to have_content("You must select at least 1 news source")
+
+      check "source_#{@cnn_source.name.downcase}"
+      choose "Weekly"
       
       click_button "Save Preferences"
-    #   binding.pry
-      # Verify success message
+      # Expect success message
       expect(page).to have_content("Preferences updated successfully")
       
       # Verify selections persisted
       visit edit_preferences_path
-      expect(page).to have_checked_field("topic_technology")
-      expect(page).to have_checked_field("topic_science")
-      expect(page).to have_checked_field("source_news_api")
-      expect(page).to have_checked_field("frequency_daily")
-    end
-
-    it "shows validation errors when no options are selected" do
-      visit edit_preferences_path
-      
-      # Uncheck all checkboxes
-      all('input[type="checkbox"]').each do |checkbox|
-        checkbox.uncheck if checkbox.checked?
-      end
-      
-      click_button "Save Preferences"
-      
-      # Updated expectation to match the actual error message
-      expect(page).to have_content("Preferences can't be blank")
-      
-      # Verify we're still on the edit page
-      expect(current_path).to eq(edit_preferences_path)
+      expect(page).to have_checked_field("topic_#{@technology_topic.name.downcase}")
+      expect(page).to have_checked_field("topic_#{@science_topic.name.downcase}")
+      expect(page).to have_checked_field("topic_#{@politics_topic.name.downcase}")
+      expect(page).to have_checked_field("source_#{@cnn_source.name.downcase}")
+      expect(page).to have_checked_field("frequency_weekly")
     end
   end
 
   describe "resetting preferences" do
     before do
-      sign_in user
-      user.update!(preferences: {
-        'topics' => ['technology', 'science'],
-        'sources' => ['news_api'],
-        'frequency' => 'weekly'
-      })
-      visit edit_preferences_path
+       # Create topics
+       @technology_topic = Topic.create!(name: 'technology', active: true)
+       @science_topic = Topic.create!(name: 'science', active: true)
+       @politics_topic = Topic.create!(name: 'politics', active: true)
+   
+       # Create news sources
+       @cnn_source = NewsSource.create!(name: 'CNN', format: 'api', active: true)
+       @bbc_source = NewsSource.create!(name: 'BBC', format: 'rss', active: true)
+       @reuters_source = NewsSource.create!(name: 'Reuters', format: 'web_scraped', active: true)
+   
+       sign_in user
     end
 
     it "allows users to reset their preferences", js: true do
-      # Click the reset button
+      visit edit_preferences_path
+      
+      # First, select some non-default preferences
+      check "topic_#{@technology_topic.name.downcase}"
+      check "topic_#{@science_topic.name.downcase}"
+      check "topic_#{@politics_topic.name.downcase}"
+      check "source_#{@bbc_source.name.downcase}"  # Select BBC instead of CNN
+      choose "Weekly"  # Select weekly instead of daily
+      
+      click_button "Save Preferences"
+      expect(page).to have_content("Preferences updated successfully")
+      
+      # Now reset preferences
       click_button "Reset Preferences"
       
       # Check that the modal appears
       expect(page).to have_selector('#reset-modal', visible: true)
+      
+      # Debug - print the modal content
+      puts "Modal content:"
+      puts page.find('#reset-modal').text
       
       # Confirm reset in the modal
       within('#reset-modal') do
         click_button "Yes, Reset"
       end
       
+      # Debug - print the page content
+      puts "Page content after reset:"
+      puts page.body
+      
       # Check for success message
       expect(page).to have_content("Preferences have been reset")
       
-      # Verify preferences were actually reset in the database
+      # Verify preferences were reset to defaults in the database
       user.reload
-      expect(user.preferences).to eq({"frequency"=>"daily", "sources"=>[], "topics"=>[]})
       
+      # Should have the first 3 topics
+      expect(user.topics.count).to eq(3)
+      expect(user.topics).to include(@technology_topic, @science_topic, @politics_topic)
+      
+      # Should have the first news source
+      expect(user.news_sources.count).to eq(1)
+      expect(user.news_sources).to include(@cnn_source)
+      
+      # Should have default email frequency
+      expect(user.preferences.email_frequency).to eq('daily')
     end
 
     it "cancels reset when clicking cancel in modal", js: true do
+      visit edit_preferences_path
+
       click_button "Reset Preferences"
       
       within('#reset-modal') do
@@ -105,14 +136,18 @@ RSpec.describe "User Preferences Management", type: :feature do
       # Modal should be hidden
       expect(page).to have_selector('#reset-modal', visible: false)
       
-      # Preferences should remain unchanged
-      user.reload
-      expect(user.selected_topics).to contain_exactly('technology', 'science')
+      # Preferences should remain unchanged (default preferences)
+      expect(page).to have_checked_field("topic_#{@technology_topic.name.downcase}")
+      expect(page).to have_checked_field("topic_#{@science_topic.name.downcase}")
+      expect(page).to have_checked_field("topic_#{@politics_topic.name.downcase}")
+      expect(page).to have_checked_field("source_#{@cnn_source.name.downcase}")
+      expect(page).to have_checked_field("frequency_daily")
     end
   end
 
   describe "navigation" do
     it "can access preferences from navigation menu" do
+      sign_in user
       visit root_path
       expect(page).to have_link("Manage Preferences")
       click_link "Manage Preferences"

@@ -88,3 +88,27 @@
     background-color: #c82333;
   }
 }
+
+.error-messages {
+  background-color: #ffebee;
+  border: 1px solid #f44336;
+  border-radius: 4px;
+  padding: 15px;
+  margin-bottom: 20px;
+}
+
+.error-text {
+  color: #f44336;
+  font-weight: bold;
+  margin-top: 5px;
+}
+
+.preferences-section {
+  margin-bottom: 30px;
+}
+
+.helper-text {
+  color: #757575;
+  font-size: 0.9em;
+  margin-bottom: 10px;
+}

@@ -9,7 +9,7 @@ class SubscriptionsController < ApplicationController
       sign_in(user)
       
       # Update subscription status
-      user.update(is_subscribed: false)
+      user.unsubscribe!
       flash[:notice] = "You have been successfully unsubscribed from our emails."
     else
       flash[:alert] = "Invalid unsubscribe token."

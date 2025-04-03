@@ -9,13 +9,13 @@ FactoryBot.define do
     unsubscribe_token { SecureRandom.urlsafe_base64(32) }
     admin { false }
 
-    trait :subscribed do
-      is_subscribed { true }
-    end
+    # trait :subscribed do
+    #   is_subscribed { true }
+    # end
 
-    trait :unconfirmed do
-      confirmed_at { nil }
-    end
+    # trait :unconfirmed do
+    #   confirmed_at { nil }
+    # end
 
     # Remove this callback if you're relying on the User model's callback
     # after(:create) do |user|

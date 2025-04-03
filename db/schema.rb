@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2025_03_22_013407) do
+ActiveRecord::Schema[7.1].define(version: 2025_03_31_140933) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
 
@@ -59,6 +59,19 @@ ActiveRecord::Schema[7.1].define(version: 2025_03_22_013407) do
     t.index ["user_id"], name: "index_email_trackings_on_user_id"
   end
 
+  create_table "news_sources", force: :cascade do |t|
+    t.string "name", null: false
+    t.string "url"
+    t.string "format", null: false
+    t.boolean "active", default: true
+    t.jsonb "settings", default: {}
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["active"], name: "index_news_sources_on_active"
+    t.index ["format"], name: "index_news_sources_on_format"
+    t.index ["name"], name: "index_news_sources_on_name", unique: true
+  end
+
   create_table "preferences", force: :cascade do |t|
     t.bigint "user_id", null: false
     t.string "email_frequency", default: "daily"
@@ -85,6 +98,16 @@ ActiveRecord::Schema[7.1].define(version: 2025_03_22_013407) do
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.index ["name"], name: "index_topics_on_name", unique: true
+  end
+
+  create_table "user_news_sources", force: :cascade do |t|
+    t.bigint "user_id", null: false
+    t.bigint "news_source_id", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["news_source_id"], name: "index_user_news_sources_on_news_source_id"
+    t.index ["user_id", "news_source_id"], name: "index_user_news_sources_on_user_id_and_news_source_id", unique: true
+    t.index ["user_id"], name: "index_user_news_sources_on_user_id"
   end
 
   create_table "user_topics", force: :cascade do |t|
@@ -123,6 +146,8 @@ ActiveRecord::Schema[7.1].define(version: 2025_03_22_013407) do
   add_foreign_key "email_metrics", "users"
   add_foreign_key "email_trackings", "users"
   add_foreign_key "preferences", "users"
+  add_foreign_key "user_news_sources", "news_sources"
+  add_foreign_key "user_news_sources", "users"
   add_foreign_key "user_topics", "topics"
   add_foreign_key "user_topics", "users"
 end

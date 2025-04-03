@@ -3,14 +3,24 @@ class PreferencesController < ApplicationController
   before_action :set_user
 
   def edit
-    # Add available news sources for the view
-    @news_sources = NewsFetcher.new.sources.map { |s| s[:name] }
+    @user = current_user
+    @topics = Topic.active
+    @news_sources = NewsSource.active
   end
 
   def update
+    @user = current_user
+    
     if @user.update(user_params)
       redirect_to edit_preferences_path, notice: 'Preferences updated successfully'
     else
+      @topics = Topic.active
+      @news_sources = NewsSource.active
+
+       Rails.logger.debug "UPDATE FAILED: #{@user.errors.full_messages}"
+      
+      # Return a 422 status code for Turbo to handle
+      flash.now[:alert] = @user.errors.full_messages.to_sentence
       render :edit, status: :unprocessable_entity
     end
   end
@@ -38,11 +48,9 @@ class PreferencesController < ApplicationController
 
   def user_params
     params.require(:user).permit(
-      preferences: {
-        topics: [],
-        sources: [],
-        frequency: []
-      }
+      topic_ids: [], 
+      news_source_ids: [],
+      preferences_attributes: [:id, :email_frequency, :dark_mode]
     )
   end
 end

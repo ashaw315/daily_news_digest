@@ -10,11 +10,18 @@ class User < ApplicationRecord
   
   has_many :user_topics, dependent: :destroy
   has_many :topics, through: :user_topics
+
+  has_many :user_news_sources, dependent: :destroy
+  has_many :news_sources, through: :user_news_sources
   
   validates :email, presence: true, uniqueness: true
+  validate :minimum_preferences_selected
   
   before_create :generate_unsubscribe_token
   after_create :create_default_preferences
+
+  # attribute :preferences, :jsonb, default: {}
+  accepts_nested_attributes_for :preferences
   
   def admin?
     admin
@@ -33,16 +40,37 @@ class User < ApplicationRecord
   end
 
   def reset_preferences!
+    # Clear existing preferences
     user_topics.destroy_all
+    user_news_sources.destroy_all
+    
+    # Reset preferences attributes
     preferences.update!(
-      sources: [],
-      email_frequency: 'daily'
+      email_frequency: 'daily',
+      dark_mode: false
     )
+    
+    # Create default topic and news source associations
+    create_default_preferences
+    
+    # Return true to indicate success
+    true
+  rescue => e
+    # Log the error
+    Rails.logger.error "Error resetting preferences: #{e.message}"
+    Rails.logger.error e.backtrace.join("\n")
+    
+    # Return false to indicate failure
+    false
   end
 
   def preferred_news_source
     sources = preferences&.sources
     sources&.first
+  end
+
+  def unsubscribe!
+    self.update_columns(is_subscribed: false)
   end
   
   private
@@ -52,10 +80,54 @@ class User < ApplicationRecord
   end
 
   def create_default_preferences
-    create_preferences!(
-      sources: [],
-      email_frequency: 'daily',
-      dark_mode: false
-    ) unless preferences
+    Rails.logger.debug "Creating default preferences for user #{id}"
+    
+    # Get the first 3 active topics
+    default_topics = Topic.active.limit(3)
+    Rails.logger.debug "Default topics: #{default_topics.pluck(:name)}"
+    
+    # Get the first active news source
+    default_source = NewsSource.active.first
+    Rails.logger.debug "Default news source: #{default_source&.name}"
+    
+    # Associate the default topics with the user
+    default_topics.each do |topic|
+      user_topics.create!(topic: topic)
+    end
+    
+    # Associate the default news source with the user
+    user_news_sources.create!(news_source: default_source) if default_source
+    
+    # Create preferences with default values if they don't exist
+    if preferences.nil?
+      create_preferences!(
+        email_frequency: 'daily',
+        dark_mode: false
+      )
+    end
+    
+    Rails.logger.debug "Default preferences created successfully"
+  rescue => e
+    Rails.logger.error "Error creating default preferences: #{e.message}"
+    Rails.logger.error e.backtrace.join("\n")
+    raise
+  end
+
+  def minimum_preferences_selected
+    # Skip validation for new records (during registration)
+    return if new_record?
+    
+    topic_count = topics.size
+    source_count = news_sources.size
+
+     Rails.logger.debug "VALIDATION: User #{id} has #{topic_count} topics and #{source_count} news sources"
+    
+    if topic_count < 3
+      errors.add(:topics, "You must select at least 3 topics (you selected #{topic_count})")
+    end
+    
+    if source_count < 1
+      errors.add(:news_sources, "You must select at least 1 news source")
+    end
   end
 end
