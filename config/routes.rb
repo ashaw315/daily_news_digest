@@ -34,7 +34,7 @@ Rails.application.routes.draw do
    namespace :admin do
     get 'dashboard', to: 'dashboard#index'
     resources :topics
-    resources :sources
+    resources :news_sources
     resources :users, only: [:index, :show]
     resources :email_metrics, only: [:index]
   end

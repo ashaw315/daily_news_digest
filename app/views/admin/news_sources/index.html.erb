@@ -1,0 +1,38 @@
+<div class="container mt-4">
+  <h1>News Sources</h1>
+
+  <div class="mb-3">
+    <%= link_to 'New News Source', new_admin_news_source_path, class: 'btn btn-primary' %>
+  </div>
+
+  <div class="card">
+    <div class="card-body">
+      <table class="table">
+        <thead>
+          <tr>
+            <th>Name</th>
+            <th>URL</th>
+            <th>Format</th>
+            <th>Status</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% @sources.each do |source| %>
+            <tr>
+              <td><%= source.name %></td>
+              <td><%= source.url %></td>
+              <td><%= source.format %></td>
+              <td><%= source.active? ? 'Active' : 'Inactive' %></td>
+              <td>
+                <%= link_to 'Show', new_admin_source_path(source), class: 'btn btn-sm btn-info' %>
+                <%= link_to 'Edit', edit_admin_source_path(source), class: 'btn btn-sm btn-warning' %>
+                <%= link_to 'Delete', destroy_admin_source_path(source), method: :delete, data: { confirm: 'Are you sure?' }, class: 'btn btn-sm btn-danger' %>
+              </td>
+            </tr>
+          <% end %>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>

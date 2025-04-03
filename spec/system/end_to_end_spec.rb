@@ -155,7 +155,7 @@ RSpec.describe "End-to-End Integration", type: :system do
     expect(page).to have_content("Admin Dashboard")
     
     # 3. Check sources management
-    visit admin_sources_path
+    admin_news_sources_path
     expect(page).to have_content("Content Sources")
     expect(page).to have_content("Test RSS Feed")
     expect(page).to have_content("Test API")

@@ -1,0 +1,36 @@
+ <div class="container mt-4">
+  <h1>Topics</h1>
+
+  <div class="mb-3">
+    <%= link_to 'New Topic', new_admin_topic_path, class: 'btn btn-primary' %>
+  </div>
+
+  <div class="card">
+    <div class="card-body">
+      <table class="table">
+        <thead>
+          <tr>
+            <th>Name</th>
+            <th>Description</th>
+            <th>Status</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% @topics.each do |topic| %>
+            <tr>
+              <td><%= topic.name %></td>
+              <td><%= topic.description %></td>
+              <td><%= topic.active? ? 'Active' : 'Inactive' %></td>
+              <td>
+                <%= link_to 'Show', admin_topic_path(topic), class: 'btn btn-sm btn-info' %>
+                <%= link_to 'Edit', edit_admin_topic_path(topic), class: 'btn btn-sm btn-warning' %>
+                <%= link_to 'Delete', admin_topic_path(topic), method: :delete, data: { confirm: 'Are you sure?' }, class: 'btn btn-sm btn-danger' %>
+              </td>
+            </tr>
+          <% end %>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>

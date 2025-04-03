@@ -1,82 +1,100 @@
-<h1>User: <%= @user.email %></h1>
-
-<div class="card mb-4">
-  <div class="card-header">
-    <h3>User Details</h3>
+<div class="container mt-4">
+  <div class="card mb-4">
+    <div class="card-header">
+      <h1>User: <%= @user.email %></h1>
+    </div>
+    <div class="card-body">
+      <div class="row">
+        <div class="col-md-6">
+          <p><strong>Email:</strong> <%= @user.email %></p>
+          <p><strong>Subscribed:</strong> <%= @user.is_subscribed? ? 'Yes' : 'No' %></p>
+          <p><strong>Admin:</strong> <%= @user.admin? ? 'Yes' : 'No' %></p>
+          <p><strong>Created:</strong> <%= @user.created_at.strftime('%Y-%m-%d %H:%M:%S') %></p>
+          <p><strong>Last Updated:</strong> <%= @user.updated_at.strftime('%Y-%m-%d %H:%M:%S') %></p>
+        </div>
+        <div class="col-md-6">
+          <p><strong>Email Frequency:</strong> <%= @user.email_frequency %></p>
+          <p><strong>Unsubscribe Token:</strong> <%= @user.unsubscribe_token %></p>
+        </div>
+      </div>
+      
+      <div class="mt-3">
+        <%= link_to 'Back to Users', admin_users_path, class: 'btn btn-secondary' %>
+      </div>
+    </div>
   </div>
-  <div class="card-body">
-    <dl class="row">
-      <dt class="col-sm-3">Email:</dt>
-      <dd class="col-sm-9"><%= @user.email %></dd>
-      
-      <dt class="col-sm-3">Sign Up Date:</dt>
-      <dd class="col-sm-9"><%= @user.created_at.strftime('%B %d, %Y') %></dd>
-      
-      <% if User.column_names.include?('last_sign_in_at') %>
-        <dt class="col-sm-3">Last Sign In:</dt>
-        <dd class="col-sm-9"><%= @user.last_sign_in_at&.strftime('%B %d, %Y') || 'Never' %></dd>
+
+  <div class="row">
+    <div class="col-md-6">
+      <div class="card mb-4">
+        <div class="card-header">
+          <h3>Topics (<%= @topics.count %>)</h3>
+        </div>
+        <div class="card-body">
+          <% if @topics.any? %>
+            <ul class="list-group">
+              <% @topics.each do |topic| %>
+                <li class="list-group-item"><%= topic.name %></li>
+              <% end %>
+            </ul>
+          <% else %>
+            <p>No topics selected.</p>
+          <% end %>
+        </div>
+      </div>
+    </div>
+    
+    <div class="col-md-6">
+      <div class="card mb-4">
+        <div class="card-header">
+          <h3>News Sources (<%= @news_sources.count %>)</h3>
+        </div>
+        <div class="card-body">
+          <% if @news_sources.any? %>
+            <ul class="list-group">
+              <% @news_sources.each do |source| %>
+                <li class="list-group-item"><%= source.name %></li>
+              <% end %>
+            </ul>
+          <% else %>
+            <p>No news sources selected.</p>
+          <% end %>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-header">
+      <h3>Recent Email Metrics</h3>
+    </div>
+    <div class="card-body">
+      <% if @email_metrics.any? %>
+        <table class="table">
+          <thead>
+            <tr>
+              <th>Type</th>
+              <th>Sent At</th>
+              <th>Opened At</th>
+              <th>Clicked At</th>
+              <th>Status</th>
+            </tr>
+          </thead>
+          <tbody>
+            <% @email_metrics.each do |metric| %>
+              <tr>
+                <td><%= metric.email_type %></td>
+                <td><%= metric.sent_at&.strftime('%Y-%m-%d %H:%M:%S') %></td>
+                <td><%= metric.opened_at&.strftime('%Y-%m-%d %H:%M:%S') %></td>
+                <td><%= metric.clicked_at&.strftime('%Y-%m-%d %H:%M:%S') %></td>
+                <td><%= metric.status %></td>
+              </tr>
+            <% end %>
+          </tbody>
+        </table>
+      <% else %>
+        <p>No email metrics available.</p>
       <% end %>
-      
-      <dt class="col-sm-3">Admin:</dt>
-      <dd class="col-sm-9"><%= @user.admin? ? 'Yes' : 'No' %></dd>
-    </dl>
+    </div>
   </div>
 </div>
-
-<div class="card">
-  <div class="card-header">
-    <h3>User Preferences</h3>
-  </div>
-  <div class="card-body">
-    <% if @preferences.present? %>
-      <dl class="row">
-        <dt class="col-sm-3">Topics:</dt>
-        <dd class="col-sm-9">
-          <% if @preferences.is_a?(Hash) && @preferences['topics'].present? %>
-            <ul>
-              <% @preferences['topics'].each do |topic| %>
-                <li><%= topic %></li>
-              <% end %>
-            </ul>
-          <% elsif @preferences.respond_to?(:topics) && @preferences.topics.present? %>
-            <ul>
-              <% @preferences.topics.each do |topic| %>
-                <li><%= topic %></li>
-              <% end %>
-            </ul>
-          <% else %>
-            No topics selected
-          <% end %>
-        </dd>
-        
-        <dt class="col-sm-3">Email Frequency:</dt>
-        <dd class="col-sm-9">
-          <% if @preferences.is_a?(Hash) %>
-            <%= @preferences['frequency'] || @preferences['email_frequency'] || 'Not set' %>
-          <% elsif @preferences.respond_to?(:email_frequency) %>
-            <%= @preferences.email_frequency || 'Not set' %>
-          <% else %>
-            Not set
-          <% end %>
-        </dd>
-        
-        <dt class="col-sm-3">Dark Mode:</dt>
-        <dd class="col-sm-9">
-          <% if @preferences.is_a?(Hash) %>
-            <%= (@preferences['dark_mode'] || @preferences['dark_mode'] == true) ? 'Enabled' : 'Disabled' %>
-          <% elsif @preferences.respond_to?(:dark_mode?) %>
-            <%= @preferences.dark_mode? ? 'Enabled' : 'Disabled' %>
-          <% else %>
-            Disabled
-          <% end %>
-        </dd>
-      </dl>
-    <% else %>
-      <p>No preferences set</p>
-    <% end %>
-  </div>
-</div>
-
-<div class="mt-3">
-  <%= link_to 'Back to Users', admin_users_path, class: 'btn btn-secondary' %>
-</div> 
