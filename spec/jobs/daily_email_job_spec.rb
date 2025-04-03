@@ -3,18 +3,25 @@ require 'rails_helper'
 RSpec.describe DailyEmailJob, type: :job do
   include ActiveJob::TestHelper
   
-  # Create the user without setting preferences directly
+  # Create the user with is_subscribed: true
   let(:user) { create(:user, is_subscribed: true) }
   
   # Create a technology topic
   let!(:technology_topic) { create(:topic, name: 'technology') }
   
   before do
+    # Clear any existing associations to avoid conflicts
+    user.topics.clear
+    
     # Associate the user with the technology topic
     user.topics << technology_topic
     
-    # Set the email frequency
-    user.preferences.update!(email_frequency: 'daily')
+    # Make sure the user has a preferences record
+    if user.preferences.nil?
+      user.create_preferences(email_frequency: 'daily')
+    else
+      user.preferences.update!(email_frequency: 'daily')
+    end
     
     # Mock the ArticleFetcher
     allow(ArticleFetcher).to receive(:fetch_for_user).and_return(articles)
