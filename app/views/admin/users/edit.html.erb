@@ -1,0 +1,45 @@
+ <div class="container mt-4">
+  <h1>Edit User</h1>
+  
+  <div class="card">
+    <div class="card-body">
+      <%= form_with(model: [:admin, @user], local: true) do |form| %>
+        <% if @user.errors.any? %>
+          <div class="alert alert-danger">
+            <h2><%= pluralize(@user.errors.count, "error") %> prohibited this user from being saved:</h2>
+            <ul>
+              <% @user.errors.full_messages.each do |message| %>
+                <li><%= message %></li>
+              <% end %>
+            </ul>
+          </div>
+        <% end %>
+        
+        <div class="mb-3">
+          <%= form.label :name, class: "form-label" %>
+          <%= form.text_field :name, class: "form-control" %>
+        </div>
+        
+        <div class="mb-3">
+          <%= form.label :email, class: "form-label" %>
+          <%= form.email_field :email, class: "form-control" %>
+        </div>
+        
+        <div class="mb-3 form-check">
+          <%= form.check_box :admin, class: "form-check-input" %>
+          <%= form.label :admin, class: "form-check-label" %>
+        </div>
+        
+        <div class="mb-3 form-check">
+          <%= form.check_box :is_subscribed, class: "form-check-input" %>
+          <%= form.label :is_subscribed, "Subscribed to emails", class: "form-check-label" %>
+        </div>
+        
+        <div class="actions">
+          <%= form.submit "Update User", class: "btn btn-primary" %>
+          <%= link_to "Back", admin_users_path, class: "btn btn-secondary" %>
+        </div>
+      <% end %>
+    </div>
+  </div>
+</div>

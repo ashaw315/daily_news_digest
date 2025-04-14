@@ -9,4 +9,13 @@ class NewsSource < ApplicationRecord
     scope :rss, -> { where(format: 'rss') }
     scope :api, -> { where(format: 'api') }
     scope :web_scraped, -> { where(format: 'web_scraped') }
+
+    def validate_source
+      validator = SourceValidatorService.new(self)
+      if validator.validate
+        true
+      else
+        validator.errors
+      end
+    end
   end

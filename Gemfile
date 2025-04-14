@@ -45,6 +45,7 @@ gem 'dotenv-rails', groups: [:development, :test]
 gem "devise", "~> 4.9"
 gem "sidekiq", "~> 7.0"
 gem 'sassc-rails'
+gem 'rubocop', '~> 1.75', require: false
 
 # Background processing
 gem 'sidekiq-failures'
@@ -54,6 +55,7 @@ gem 'whenever', require: false
 gem 'feedjira'                # For RSS feed parsing
 gem 'httparty'                # For API requests
 gem 'nokogiri'                # For HTML parsing
+gem 'rss'
 
 # Optional - uncomment if you want to check robots.txt rules
 # gem 'robotstxt-parser'      # For checking robots.txt rules
@@ -61,6 +63,7 @@ gem 'nokogiri'                # For HTML parsing
 # Text processing and categorization
 gem 'stopwords-filter', require: 'stopwords'        # For removing stopwords
 gem 'classifier-reborn'       # For text classification
+gem 'ruby-openai'
 
 group :development, :test do
   # See https://guides.rubyonrails.org/debugging_rails_applications.html#debugging-with-the-debug-gem
@@ -91,5 +94,6 @@ group :test do
   gem "shoulda-matchers"
   gem "database_cleaner-active_record"
   gem "rails-controller-testing"
+  gem "webmock"
 end
 

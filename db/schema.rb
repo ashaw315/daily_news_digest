@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2025_03_31_140933) do
+ActiveRecord::Schema[7.1].define(version: 2025_04_03_200209) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
 
@@ -67,6 +67,10 @@ ActiveRecord::Schema[7.1].define(version: 2025_03_31_140933) do
     t.jsonb "settings", default: {}
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.datetime "last_fetched_at"
+    t.string "last_fetch_status"
+    t.integer "last_fetch_article_count"
+    t.text "last_fetch_errors"
     t.index ["active"], name: "index_news_sources_on_active"
     t.index ["format"], name: "index_news_sources_on_format"
     t.index ["name"], name: "index_news_sources_on_name", unique: true

@@ -10,33 +10,116 @@
     </div>
   <% end %>
 
-  <div class="form-group">
+  <div class="form-group mb-3">
     <%= form.label :name %>
     <%= form.text_field :name, class: 'form-control' %>
+    <small class="form-text text-muted">Name of the news source (e.g. "New York Times Technology")</small>
   </div>
 
-  <div class="form-group">
-    <%= form.label :url %>
-    <%= form.text_field :url, class: 'form-control' %>
-  </div>
-
-  <div class="form-group">
-    <%= form.label :format %>
-    <%= form.select :format, ['api', 'rss', 'scraper'], {}, class: 'form-control' %>
+  <div class="form-group mb-3">
+    <%= form.label :url, "RSS Feed URL" %>
+    <%= form.text_field :url, class: 'form-control', placeholder: "https://example.com/rss/feed.xml" %>
+    <small class="form-text text-muted">Enter the full URL to the RSS feed</small>
   </div>
 
   <div class="form-check mb-3">
     <%= form.check_box :active, class: 'form-check-input' %>
     <%= form.label :active, class: 'form-check-label' %>
+    <small class="form-text text-muted">Uncheck to temporarily disable this news source</small>
   </div>
 
-  <div class="form-group">
-    <%= form.label :settings %>
-    <%= form.text_area :settings, value: source.settings.to_json, class: 'form-control' %>
-    <small class="form-text text-muted">Enter settings as JSON</small>
+  <!-- Hidden field to always set format to 'rss' -->
+  <%= form.hidden_field :format, value: 'rss' %>
+  <%= form.hidden_field :is_validated, value: "false", id: "source-validated" %>
+
+  <div class="mb-3">
+    <button type="button" id="validate-source" class="btn btn-info">Validate RSS Feed</button>
+    <div id="validation-result" class="mt-2"></div>
   </div>
 
   <div class="actions">
     <%= form.submit class: 'btn btn-primary' %>
   </div>
 <% end %>
+
+<script>
+// Run the code immediately instead of waiting for DOMContentLoaded
+(function() {
+  const validateBtn = document.getElementById('validate-source');
+  const resultDiv = document.getElementById('validation-result');
+  const validatedField = document.getElementById('source-validated');
+  
+  // Disable submit button initially for new sources
+  if (!<%= source.persisted?.to_json %>) {
+    document.querySelector('input[type="submit"]').disabled = true;
+  }
+  
+  // Reset validation when URL changes
+  document.querySelector('input[name="news_source[url]"]').addEventListener('change', function() {
+    validatedField.value = "false";
+    document.querySelector('input[type="submit"]').disabled = true;
+    resultDiv.innerHTML = '';
+  });
+  
+  // Validate RSS feed
+  validateBtn.addEventListener('click', function() {
+    resultDiv.innerHTML = '<div class="spinner-border text-primary" role="status"><span class="visually-hidden">Loading...</span></div>';
+    
+    const form = validateBtn.closest('form');
+    const formData = new FormData(form);
+    const sourceId = <%= source.id.to_json %>;
+    
+    let url = '';
+    let method = 'POST';
+    
+    if (sourceId) {
+      // Existing source
+      url = '<%= admin_news_source_path(source) if source.persisted? %>/validate';
+    } else {
+      // New source
+      url = '<%= validate_new_admin_news_sources_path %>';
+    }
+    
+    fetch(url, {
+      method: method,
+      body: formData,
+      headers: {
+        'X-CSRF-Token': document.querySelector('meta[name="csrf-token"]').content,
+        'Accept': 'application/json'
+      }
+    })
+    .then(response => {
+      const contentType = response.headers.get('content-type');
+      if (contentType && contentType.includes('application/json')) {
+        return response.json();
+      } else {
+        return response.text().then(text => {
+          throw new Error('Server returned non-JSON response: ' + text.substring(0, 100) + '...');
+        });
+      }
+    })
+    .then(data => {
+      if (data.valid) {
+        resultDiv.innerHTML = '<div class="alert alert-success" data-validation-success="true">' + data.message + '</div>';
+        validatedField.value = "true";
+        document.querySelector('input[type="submit"]').disabled = false;
+      } else {
+        let errorHtml = '<div class="alert alert-danger"><strong>RSS Feed Validation Failed:</strong><ul>';
+        data.errors.forEach(error => {
+          errorHtml += '<li>' + error + '</li>';
+        });
+        errorHtml += '</ul></div>';
+        resultDiv.innerHTML = errorHtml;
+        validatedField.value = "false";
+        document.querySelector('input[type="submit"]').disabled = true;
+      }
+    })
+    .catch(error => {
+      console.error('Validation error:', error);
+      resultDiv.innerHTML = '<div class="alert alert-danger">Error validating RSS feed: ' + error.message + '</div>';
+      validatedField.value = "false";
+      document.querySelector('input[type="submit"]').disabled = true;
+    });
+  });
+})(); // Immediately invoke the function
+</script>

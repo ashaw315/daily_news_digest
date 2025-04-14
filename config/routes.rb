@@ -35,7 +35,17 @@ Rails.application.routes.draw do
     get 'dashboard', to: 'dashboard#index'
     resources :topics
     resources :news_sources
-    resources :users, only: [:index, :show]
+    resources :users, only: [:index, :show, :destroy]
     resources :email_metrics, only: [:index]
+    resources :news_sources do
+      member do
+        post :validate, defaults: { format: :json }
+        patch :validate, defaults: { format: :json }
+        get :preview
+      end
+      collection do
+        post :validate_new, defaults: { format: :json }
+      end
+    end
   end
 end

@@ -1,0 +1,48 @@
+<div class="container mt-4">
+  <h1>Preview: <%= @source.name %></h1>
+  
+  <% if @articles && @articles.any? %>
+    <div class="card mb-4">
+      <div class="card-header">
+        <h3>Sample Articles</h3>
+      </div>
+      <div class="card-body">
+        <% @articles.each do |article| %>
+          <div class="card mb-3">
+            <div class="card-body">
+              <h5 class="card-title"><%= article[:title] %></h5>
+              <h6 class="card-subtitle mb-2 text-muted">
+                <%= article[:published_at]&.strftime('%B %d, %Y') %>
+                <% if article[:topic].present? %>
+                  <span class="badge bg-info"><%= article[:topic] %></span>
+                <% end %>
+              </h6>
+              
+              <div class="card-text mb-3">
+                <h6>Article Summary:</h6>
+                <div class="p-3 bg-light rounded">
+                  <%= simple_format(article[:description]) %>
+                </div>
+              </div>
+              
+              <div class="mt-3">
+                <a href="<%= article[:url] %>" target="_blank" class="btn btn-primary btn-sm">
+                  Read Full Article
+                </a>
+              </div>
+            </div>
+          </div>
+        <% end %>
+      </div>
+    </div>
+  <% else %>
+    <div class="alert alert-warning">
+      No articles found from this source. Please check the source URL and format settings.
+    </div>
+  <% end %>
+  
+  <div class="mt-3">
+    <%= link_to 'Edit Source', edit_admin_news_source_path(@source), class: 'btn btn-warning' %>
+    <%= link_to 'Back', admin_news_sources_path, class: 'btn btn-secondary' %>
+  </div>
+</div>

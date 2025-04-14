@@ -75,9 +75,8 @@
             <tr>
               <th>Type</th>
               <th>Sent At</th>
-              <th>Opened At</th>
-              <th>Clicked At</th>
               <th>Status</th>
+              <th>Subject</th>
             </tr>
           </thead>
           <tbody>
@@ -85,9 +84,8 @@
               <tr>
                 <td><%= metric.email_type %></td>
                 <td><%= metric.sent_at&.strftime('%Y-%m-%d %H:%M:%S') %></td>
-                <td><%= metric.opened_at&.strftime('%Y-%m-%d %H:%M:%S') %></td>
-                <td><%= metric.clicked_at&.strftime('%Y-%m-%d %H:%M:%S') %></td>
                 <td><%= metric.status %></td>
+                <td><%= metric.subject %></td>
               </tr>
             <% end %>
           </tbody>

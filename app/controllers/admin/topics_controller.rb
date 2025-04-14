@@ -34,8 +34,12 @@ class Admin::TopicsController < Admin::BaseController
   end
 
   def destroy
-    @topic.destroy
-    redirect_to admin_topics_path, notice: 'Topic was successfully destroyed.'
+    if @topic.in_use?
+      redirect_to admin_topics_path, alert: 'Cannot delete topic that is in use by users.'
+    else
+      @topic.destroy
+      redirect_to admin_topics_path, notice: 'Topic was successfully destroyed.'
+    end
   end
 
   private
@@ -45,6 +49,6 @@ class Admin::TopicsController < Admin::BaseController
   end
 
   def topic_params
-    params.require(:topic).permit(:name, :description, :active)
+    params.require(:topic).permit(:name, :active)
   end
 end

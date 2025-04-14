@@ -1,36 +1,80 @@
- <div class="container mt-4">
-  <h1>Topics</h1>
+<div data-controller="delete-topic">
+  <div class="container mt-4">
+    <h1>Topics</h1>
 
-  <div class="mb-3">
-    <%= link_to 'New Topic', new_admin_topic_path, class: 'btn btn-primary' %>
-  </div>
+    <div class="mb-3">
+      <%= link_to 'New Topic', new_admin_topic_path, class: 'btn btn-primary' %>
+    </div>
 
-  <div class="card">
-    <div class="card-body">
-      <table class="table">
-        <thead>
-          <tr>
-            <th>Name</th>
-            <th>Description</th>
-            <th>Status</th>
-            <th>Actions</th>
-          </tr>
-        </thead>
-        <tbody>
-          <% @topics.each do |topic| %>
+    <div class="card">
+      <div class="card-body">
+        <table class="table">
+          <thead>
             <tr>
-              <td><%= topic.name %></td>
-              <td><%= topic.description %></td>
-              <td><%= topic.active? ? 'Active' : 'Inactive' %></td>
-              <td>
-                <%= link_to 'Show', admin_topic_path(topic), class: 'btn btn-sm btn-info' %>
-                <%= link_to 'Edit', edit_admin_topic_path(topic), class: 'btn btn-sm btn-warning' %>
-                <%= link_to 'Delete', admin_topic_path(topic), method: :delete, data: { confirm: 'Are you sure?' }, class: 'btn btn-sm btn-danger' %>
-              </td>
+              <th>Name</th>
+              <th>Description</th>
+              <th>Status</th>
+              <th>Actions</th>
             </tr>
+          </thead>
+          <tbody>
+            <% @topics.each do |topic| %>
+              <tr>
+                <td><%= topic.name %></td>
+                <td><%= topic.active? ? 'Active' : 'Inactive' %></td>
+                <td>
+                  <%= link_to 'Show', admin_topic_path(topic), class: 'btn btn-sm btn-info' %>
+                  <%= link_to 'Edit', edit_admin_topic_path(topic), class: 'btn btn-sm btn-warning' %>
+                  
+                  <% if topic.in_use? %>
+                    <button type="button" 
+                            class="btn btn-sm btn-danger"
+                            disabled
+                            title="This topic is in use and cannot be deleted">
+                      Delete
+                    </button>
+                  <% else %>
+                    <button type="button" 
+                            class="btn btn-sm btn-danger"
+                            data-action="click->delete-topic#showModal"
+                            data-delete-topic-id-param="<%= topic.id %>">
+                      Delete
+                    </button>
+                  <% end %>
+                </td>
+              </tr>
+            <% end %>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div id="delete-modal" 
+         class="modal" 
+         style="display: none;"
+         data-delete-topic-target="modal">
+      <div class="modal-content">
+        <h3>Delete Topic</h3>
+        <p>Are you sure? This cannot be undone.</p>
+        <div class="modal-actions">
+          <%= form_with(
+                url: admin_topic_path(':topic_id'), 
+                method: :delete,
+                local: true,
+                data: { 
+                  delete_topic_target: "form"
+                }
+              ) do |form| %>
+            <%= form.hidden_field :authenticity_token, value: form_authenticity_token %>
+            <%= form.submit "Yes, Delete", class: "button danger" %>
           <% end %>
-        </tbody>
-      </table>
+          <button type="button" 
+                  class="button secondary" 
+                  data-action="delete-topic#hideModal">
+            Cancel
+          </button>
+        </div>
+      </div>
     </div>
   </div>
 </div>

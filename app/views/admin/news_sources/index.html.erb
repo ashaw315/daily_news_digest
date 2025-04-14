@@ -1,38 +1,110 @@
-<div class="container mt-4">
-  <h1>News Sources</h1>
+<div data-controller="delete-source">
+  <div class="container mt-4">
+    <h1>News Sources</h1>
 
-  <div class="mb-3">
-    <%= link_to 'New News Source', new_admin_news_source_path, class: 'btn btn-primary' %>
-  </div>
+    <div class="mb-3">
+      <%= link_to 'New News Source', new_admin_news_source_path, class: 'btn btn-primary' %>
+    </div>
 
-  <div class="card">
-    <div class="card-body">
-      <table class="table">
-        <thead>
-          <tr>
-            <th>Name</th>
-            <th>URL</th>
-            <th>Format</th>
-            <th>Status</th>
-            <th>Actions</th>
-          </tr>
-        </thead>
-        <tbody>
-          <% @sources.each do |source| %>
+    <div class="card">
+      <div class="card-body">
+        <table class="table">
+          <thead>
             <tr>
-              <td><%= source.name %></td>
-              <td><%= source.url %></td>
-              <td><%= source.format %></td>
-              <td><%= source.active? ? 'Active' : 'Inactive' %></td>
-              <td>
-                <%= link_to 'Show', new_admin_source_path(source), class: 'btn btn-sm btn-info' %>
-                <%= link_to 'Edit', edit_admin_source_path(source), class: 'btn btn-sm btn-warning' %>
-                <%= link_to 'Delete', destroy_admin_source_path(source), method: :delete, data: { confirm: 'Are you sure?' }, class: 'btn btn-sm btn-danger' %>
-              </td>
+              <th>Name</th>
+              <th>URL</th>
+              <th>Format</th>
+              <th>Status</th>
+              <th>Last Fetch</th>
+              <th>Articles</th>
+              <th>Actions</th>
             </tr>
+          </thead>
+          <tbody>
+            <% @sources.each do |source| %>
+              <tr>
+                <td><%= source.name %></td>
+                <td><%= source.url %></td>
+                <td><%= source.format %></td>
+                <td>
+                  <% if source.active? %>
+                    <span class="badge bg-success">Active</span>
+                  <% else %>
+                    <span class="badge bg-secondary">Inactive</span>
+                  <% end %>
+                </td>
+                <td>
+                  <% if source.last_fetched_at %>
+                    <%= time_ago_in_words(source.last_fetched_at) %> ago
+                    <% if source.last_fetch_status == 'success' %>
+                      <span class="badge bg-success">Success</span>
+                    <% else %>
+                      <span class="badge bg-danger">Error</span>
+                    <% end %>
+                  <% else %>
+                    Never
+                  <% end %>
+                </td>
+                <td>
+                  <% if source.last_fetch_article_count %>
+                    <%= source.last_fetch_article_count %>
+                  <% else %>
+                    -
+                  <% end %>
+                </td>
+                <td>
+                  <%= link_to 'Show', admin_news_source_path(source), class: 'btn btn-sm btn-info' %>
+                  <%= link_to 'Preview', preview_admin_news_source_path(source), class: 'btn btn-sm btn-primary' %>
+                  <%= link_to 'Edit', edit_admin_news_source_path(source), class: 'btn btn-sm btn-warning' %>
+                  <% if source.in_use? %>
+                    <button type="button" 
+                            class="btn btn-sm btn-danger"
+                            disabled
+                            title="This news source is in use and cannot be deleted">
+                      Delete
+                    </button>
+                  <% else %>
+                    <button type="button" 
+                            class="btn btn-sm btn-danger"
+                            data-action="click->delete-source#showModal"
+                            data-delete-source-id-param="<%= source.id %>">
+                      Delete
+                    </button>
+                  <% end %>
+                </td>
+              </tr>
+            <% end %>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div id="delete-modal" 
+         class="modal" 
+         style="display: none;"
+         data-delete-source-target="modal">
+      <div class="modal-content">
+        <h3>Delete News Source</h3>
+        <p>Are you sure? This cannot be undone.</p>
+        <div class="modal-actions">
+          <%= form_with(
+                url: admin_news_source_path(':source_id'), 
+                method: :delete,
+                local: true,
+                data: { 
+                  delete_source_target: "form"
+                }
+              ) do |form| %>
+            <%= form.hidden_field :authenticity_token, value: form_authenticity_token %>
+            <%= form.submit "Yes, Delete", class: "button danger" %>
           <% end %>
-        </tbody>
-      </table>
+          <button type="button" 
+                  class="button secondary" 
+                  data-action="delete-source#hideModal">
+            Cancel
+          </button>
+        </div>
+      </div>
     </div>
   </div>
 </div>

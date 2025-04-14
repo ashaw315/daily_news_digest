@@ -1,15 +1,19 @@
 // Configure your import map in config/importmap.rb. Read more: https://github.com/rails/importmap-rails
-import "@hotwired/turbo-rails";
-import { Application } from "@hotwired/stimulus";
-import PreferencesController from "./controllers/preferences_controller";
+import "@hotwired/turbo-rails"
+import { Application } from "@hotwired/stimulus"
 
+// Change these lines to use importmap style imports
+// Import controllers - remove curly braces and fix paths
+import DeleteUserController from "controllers/delete_user_controller"
+import PreferencesController from "controllers/preferences_controller"
+import DeleteTopicController from "controllers/delete_topic_controller"
 
-import "hello_controller" // Import the HelloController
-import "preferences_controller" // Import the PreferencesController
 
 // Initialize Stimulus
 const application = Application.start();
-application.register("preferences", PreferencesController);
+application.register("preferences", PreferencesController)
+application.register("delete-user", DeleteUserController) 
+application.register("delete-topic", DeleteTopicController) 
 
 export { application };
 
@@ -22,12 +26,12 @@ window.onload = function() {
 };
 
 // Prevent default form submissions from navigating to about:blank
-document.addEventListener("turbo:submit-start", (event) => {
-  const form = event.target;
-  if (form.method === "post") {
-    event.preventDefault();
-  }
-});
+// document.addEventListener("turbo:submit-start", (event) => {
+//   const form = event.target;
+//   if (form.method === "post") {
+//     event.preventDefault();
+//   }
+// });
 
 // Ensure reset button logs when clicked
 document.addEventListener("turbo:load", () => {

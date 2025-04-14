@@ -21,5 +21,8 @@ FactoryBot.define do
     # after(:create) do |user|
     #   create(:preferences, user: user)
     # end
+    trait :admin do
+      admin { true }
+    end
   end
 end
