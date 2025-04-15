@@ -235,7 +235,6 @@ RSpec.describe "Admin Dashboard", type: :system do
       
       # Verify the used news source has its Delete button disabled
       within "tr", text: "Tech Daily" do
-        binding.pry
         expect(page).to have_button("Delete", disabled: true)
       end
       

@@ -7,6 +7,7 @@ import { Application } from "@hotwired/stimulus"
 import DeleteUserController from "controllers/delete_user_controller"
 import PreferencesController from "controllers/preferences_controller"
 import DeleteTopicController from "controllers/delete_topic_controller"
+import DeleteSourceController from "controllers/delete_source_controller"
 
 
 // Initialize Stimulus
@@ -14,6 +15,7 @@ const application = Application.start();
 application.register("preferences", PreferencesController)
 application.register("delete-user", DeleteUserController) 
 application.register("delete-topic", DeleteTopicController) 
+application.register("delete-source", DeleteSourceController) 
 
 export { application };
 

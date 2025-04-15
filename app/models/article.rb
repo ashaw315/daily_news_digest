@@ -1,10 +1,14 @@
 class Article < ApplicationRecord
+  belongs_to :news_source  # Add this association
+
   validates :title, presence: true
   validates :url, presence: true, uniqueness: true
   validates :publish_date, presence: true
+  validates :news_source, presence: true  # Add this validation
   
+  # Update scopes to use news_source association
   scope :by_topic, ->(topic) { where(topic: topic) }
-  scope :by_source, ->(source) { where(source: source) }
+  scope :by_source, ->(news_source) { where(news_source: news_source) }
   scope :recent, -> { order(publish_date: :desc) }
   
   # Get related articles based on topic
@@ -30,5 +34,14 @@ class Article < ApplicationRecord
     
     # Return top keywords
     word_counts.sort_by { |_, count| -count }.take(count).map(&:first)
+  end
+
+  # Add helper methods for source
+  def source_name
+    news_source&.name
+  end
+
+  def source_url
+    news_source&.url
   end
 end

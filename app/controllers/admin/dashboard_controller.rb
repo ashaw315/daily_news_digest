@@ -2,7 +2,7 @@ class Admin::DashboardController < Admin::BaseController
   def index
     @user_count = User.count
     @article_count = Article.count
-    @source_count = Source.count
+    @source_count = NewsSource.count
     @email_metrics = {
       sent: EmailMetric.where(status: 'sent').count,
       opened: EmailMetric.where(status: 'opened').count,

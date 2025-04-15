@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2025_04_03_200209) do
+ActiveRecord::Schema[7.1].define(version: 2025_04_15_190133) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
 
@@ -33,6 +33,8 @@ ActiveRecord::Schema[7.1].define(version: 2025_04_03_200209) do
     t.string "topic"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.bigint "news_source_id", null: false
+    t.index ["news_source_id"], name: "index_articles_on_news_source_id"
     t.index ["publish_date"], name: "index_articles_on_publish_date"
     t.index ["source"], name: "index_articles_on_source"
     t.index ["topic"], name: "index_articles_on_topic"
@@ -86,16 +88,6 @@ ActiveRecord::Schema[7.1].define(version: 2025_04_03_200209) do
     t.index ["user_id"], name: "index_preferences_on_user_id"
   end
 
-  create_table "sources", force: :cascade do |t|
-    t.string "name", null: false
-    t.string "url", null: false
-    t.string "source_type", null: false
-    t.boolean "active", default: true
-    t.text "selectors"
-    t.datetime "created_at", null: false
-    t.datetime "updated_at", null: false
-  end
-
   create_table "topics", force: :cascade do |t|
     t.string "name", null: false
     t.boolean "active", default: true
@@ -147,6 +139,7 @@ ActiveRecord::Schema[7.1].define(version: 2025_04_03_200209) do
     t.index ["reset_password_token"], name: "index_users_on_reset_password_token", unique: true
   end
 
+  add_foreign_key "articles", "news_sources"
   add_foreign_key "email_metrics", "users"
   add_foreign_key "email_trackings", "users"
   add_foreign_key "preferences", "users"
