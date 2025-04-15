@@ -11,10 +11,24 @@ RSpec.describe "User Preferences Management", type: :feature do
       @politics_topic = Topic.create!(name: 'politics', active: true)
   
       # Create news sources
-      @cnn_source = NewsSource.create!(name: 'CNN', format: 'api', active: true)
-      @bbc_source = NewsSource.create!(name: 'BBC', format: 'rss', active: true)
-      @reuters_source = NewsSource.create!(name: 'Reuters', format: 'web_scraped', active: true)
-  
+      @cnn_source = NewsSource.create!(
+        name: 'CNN', 
+        format: 'rss', 
+        url: 'https://rss.cnn.com/rss/cnn_topstories.rss',
+        active: true
+      )
+      @bbc_source = NewsSource.create!(
+        name: 'BBC', 
+        format: 'rss', 
+        url: 'https://feeds.bbci.co.uk/news/rss.xml',
+        active: true
+      )
+      @reuters_source = NewsSource.create!(
+        name: 'Reuters', 
+        format: 'rss', 
+        url: 'https://www.reutersagency.com/feed/',
+        active: true
+      )
       sign_in user
     end
 
@@ -27,8 +41,6 @@ RSpec.describe "User Preferences Management", type: :feature do
 
       # Expect error message about topics
       expect(page).to have_content("You must select at least 3 topics")
-
-      # binding.pry
 
       # Check the third topic again
       check "topic_#{@politics_topic.name.downcase}"
@@ -66,11 +78,25 @@ RSpec.describe "User Preferences Management", type: :feature do
        @science_topic = Topic.create!(name: 'science', active: true)
        @politics_topic = Topic.create!(name: 'politics', active: true)
    
-       # Create news sources
-       @cnn_source = NewsSource.create!(name: 'CNN', format: 'api', active: true)
-       @bbc_source = NewsSource.create!(name: 'BBC', format: 'rss', active: true)
-       @reuters_source = NewsSource.create!(name: 'Reuters', format: 'web_scraped', active: true)
-   
+        # Create news sources
+      @cnn_source = NewsSource.create!(
+        name: 'CNN', 
+        format: 'rss', 
+        url: 'https://rss.cnn.com/rss/cnn_topstories.rss',
+        active: true
+      )
+      @bbc_source = NewsSource.create!(
+        name: 'BBC', 
+        format: 'rss', 
+        url: 'https://feeds.bbci.co.uk/news/rss.xml',
+        active: true
+      )
+      @reuters_source = NewsSource.create!(
+        name: 'Reuters', 
+        format: 'rss', 
+        url: 'https://www.reutersagency.com/feed/',
+        active: true
+      )
        sign_in user
     end
 
