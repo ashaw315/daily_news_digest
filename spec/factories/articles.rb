@@ -4,7 +4,7 @@ FactoryBot.define do
     sequence(:url) { |n| "https://example.com/article-#{n}" }
     summary { "Article summary" }
     publish_date { Time.current }
-    source { "News Source" }
     topic { "general" }
+    association :news_source
   end
 end
