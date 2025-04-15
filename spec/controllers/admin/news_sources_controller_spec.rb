@@ -151,17 +151,15 @@ RSpec.describe Admin::NewsSourcesController, type: :controller do
     end
   end
 
-  describe "POST #validate" do
+  describe "POST #validate_new" do
     context "when signed in as admin" do
       before { sign_in admin_user }
 
       it "validates a new RSS feed URL" do
         # Mock the validation service
         allow_any_instance_of(NewsSource).to receive(:validate_source).and_return(true)
-
-        binding.pry
         
-        post :validate, params: { 
+        post :validate_new, params: { 
           news_source: { url: 'https://hnrss.org/frontpage' } 
         }, format: :json
 
@@ -175,7 +173,7 @@ RSpec.describe Admin::NewsSourcesController, type: :controller do
         # Mock the validation service to return error
         allow_any_instance_of(NewsSource).to receive(:validate_source).and_return(["Invalid RSS feed"])
         
-        post :validate, params: { 
+        post :validate_new, params: { 
           news_source: { url: 'https://invalid-url.com' } 
         }, format: :json
 
@@ -183,6 +181,26 @@ RSpec.describe Admin::NewsSourcesController, type: :controller do
         json_response = JSON.parse(response.body)
         expect(json_response['valid']).to be false
         expect(json_response['errors']).to be_present
+      end
+    end
+  end
+
+  describe "PATCH #validate" do
+    context "when signed in as admin" do
+      before { sign_in admin_user }
+
+      it "validates an existing RSS feed URL" do
+        # Mock the validation service
+        allow_any_instance_of(NewsSource).to receive(:validate_source).and_return(true)
+        
+        patch :validate, params: { 
+          id: news_source.id,
+          news_source: { url: 'https://hnrss.org/frontpage' } 
+        }, format: :json
+
+        expect(response).to have_http_status(:success)
+        json_response = JSON.parse(response.body)
+        expect(json_response['valid']).to be true
       end
     end
   end
