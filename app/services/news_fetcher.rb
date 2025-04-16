@@ -14,7 +14,6 @@ class NewsFetcher
     @max_articles_per_source = options[:max_articles] || 50
     @detailed_preview = options[:detailed_preview] || false
     @preview_article_count = options[:preview_article_count] || 5
-    @robots_txt_cache = {}
     @errors = []
     @summarizer = AiSummarizerService.new if @detailed_preview
   end
@@ -24,24 +23,14 @@ class NewsFetcher
     
     # Try sources in order of priority
     @sources.each do |source|
-      Rails.logger.info("Fetching articles from #{source[:name]} via #{source[:type]}")
+      Rails.logger.info("Fetching articles from #{source[:name]} via RSS")
       
       begin
         # Limit to fewer articles for detailed preview
         article_limit = @detailed_preview ? @preview_article_count : @max_articles_per_source
         
-        # Get basic article data from the source
-        new_articles = case source[:type].to_sym
-                       when :rss
-                         fetch_from_rss(source, article_limit)
-                       when :api
-                         fetch_from_api(source, article_limit)
-                       when :scrape
-                         fetch_from_scraper(source, article_limit)
-                       else
-                         @errors << "Unsupported source type: #{source[:type]}"
-                         []
-                       end
+        # Get basic article data from the RSS feed
+        new_articles = fetch_from_rss(source, article_limit)
         
         # For detailed preview, fetch full content and generate better summaries
         if @detailed_preview
@@ -51,7 +40,7 @@ class NewsFetcher
         
         # Add source information to articles
         new_articles.each do |article|
-          article[:source] = source[:name]  # Use hash syntax instead of dot notation
+          article[:source] = source[:name]
         end
         
         articles.concat(new_articles)
@@ -85,7 +74,7 @@ class NewsFetcher
     articles.each do |article|
       begin
         # Skip if no URL
-        if article[:url].blank?  # Use hash syntax
+        if article[:url].blank?
           Rails.logger.warn("Article has no URL, skipping content fetch: #{article[:title]}")
           enhanced_articles << article
           next
@@ -98,7 +87,7 @@ class NewsFetcher
         
         if full_content.present? && full_content.length > 200
           # Store the full content
-          article[:content] = full_content  # Use hash syntax
+          article[:content] = full_content
           
           # Generate AI summary
           if @summarizer
@@ -106,12 +95,12 @@ class NewsFetcher
             summary = @summarizer.summarize(full_content)
             
             # Explicitly update the description
-            article[:description] = summary  # Use hash syntax
+            article[:description] = summary
             
             Rails.logger.info("Summary generated: #{summary.truncate(100)}")
           else
             # If no AI summarizer, create a simple summary
-            article[:description] = full_content.split(/\s+/).take(200).join(' ') + '...'  # Use hash syntax
+            article[:description] = full_content.split(/\s+/).take(200).join(' ') + '...'
           end
           
           Rails.logger.info("Successfully processed article: #{article[:title]}")
@@ -293,275 +282,42 @@ class NewsFetcher
       }.with_indifferent_access
     end
   end
-
-  # Update the API fetching method to respect the limit
-  def fetch_from_api(source, limit = nil)
-    url = source[:url]
-    
-    begin
-      response = HTTParty.get(url)
-      
-      if response.code == 200
-        # Parse the JSON response
-        data = JSON.parse(response.body)
-        
-        # Extract articles from the response
-        if data['articles'].is_a?(Array)
-          articles = data['articles'].map do |article_data|
-            OpenStruct.new(
-              title: article_data['title'],
-              description: article_data['description'],
-              url: article_data['url'],
-              published_at: article_data['publishedAt'] ? Time.parse(article_data['publishedAt']) : Time.now
-            )
-          end
-          
-          # Apply limit if specified
-          return limit ? articles.take(limit) : articles
-        end
-      end
-      
-      []
-    rescue => e
-      Rails.logger.error("Error fetching from API #{url}: #{e.message}")
-      []
-    end
-  end
-  
-    # Web Scraping Methods
-  def fetch_from_scraper(source)
-    url = source[:url]
-    selectors = source[:selectors] || {}
-    
-    if !scraping_allowed?(url)
-      Rails.logger.info("Scraping not allowed for #{url} according to robots.txt")
-      return []
-    end
-    
-    begin
-      response = HTTParty.get(url)
-      
-      if response.code == 200
-        doc = Nokogiri::HTML(response.body)
-        
-        # Extract articles using the provided selectors
-        article_selector = selectors[:article] || 'article'
-        title_selector = selectors[:title] || 'h2'
-        link_selector = selectors[:link] || 'a'
-        description_selector = selectors[:description] || 'p'
-        date_selector = selectors[:date] || 'time'
-        
-        articles = doc.css(article_selector).map do |article_element|
-          # Extract title
-          title_element = article_element.css(title_selector).first
-          title = title_element&.text&.strip
-          
-          # Extract link
-          link_element = article_element.css(link_selector).first
-          url = link_element&.attributes&.[]('href')&.value
-          
-          # Make relative URLs absolute
-          if url && !url.start_with?('http')
-            uri = URI.parse(source[:url])
-            base_url = "#{uri.scheme}://#{uri.host}"
-            url = "#{base_url}#{url}"
-          end
-          
-          # Extract description
-          description_element = article_element.css(description_selector).first
-          description = description_element&.text&.strip
-          
-          # Extract date
-          date_element = article_element.css(date_selector).first
-          published_at = nil
-          
-          if date_element
-            # Try to parse the date from the datetime attribute
-            datetime = date_element.attributes['datetime']&.value
-            published_at = datetime ? Time.parse(datetime) : Time.now
-          else
-            published_at = Time.now
-          end
-          
-          # Create an article object if we have the minimum required fields
-          if title && url
-            OpenStruct.new(
-              title: title,
-              description: description,
-              url: url,
-              published_at: published_at,
-              source: source[:name]
-            )
-          else
-            nil
-          end
-        end.compact
-        
-        return articles
-      end
-      
-      []
-    rescue => e
-      Rails.logger.error("Error scraping #{url}: #{e.message}")
-      []
-    end
-  end
-  
-  def scraping_allowed?(url)
-    begin
-      uri = URI.parse(url)
-      base_url = "#{uri.scheme}://#{uri.host}"
-      path = uri.path.empty? ? "/" : uri.path
-      
-      # Check cache first
-      cache_key = "#{base_url}#{path}"
-      return @robots_txt_cache[cache_key] if @robots_txt_cache.key?(cache_key)
-      
-      # If robotstxt-parser is available, use it
-      if defined?(Robotstxt)
-        robots_txt_url = "#{base_url}/robots.txt"
-        
-        # Check if we've already fetched the robots.txt for this domain
-        unless @robots_txt_cache.key?("#{base_url}/robots.txt")
-          response = HTTParty.get(robots_txt_url)
-          
-          if response.code == 200
-            # Cache the robots.txt content
-            @robots_txt_cache["#{base_url}/robots.txt"] = response.body
-          else
-            # If no robots.txt, cache that fact
-            @robots_txt_cache["#{base_url}/robots.txt"] = nil
-          end
-        end
-        
-        # Get the cached robots.txt content
-        robots_txt = @robots_txt_cache["#{base_url}/robots.txt"]
-        
-        if robots_txt
-          # Parse the robots.txt and check if the path is allowed
-          parser = Robotstxt::Parser.new(robots_txt)
-          allowed = parser.allowed?('*', path)
-          
-          # Cache the result for this path
-          @robots_txt_cache[cache_key] = allowed
-          
-          return allowed
-        else
-          # If no robots.txt, assume allowed
-          @robots_txt_cache[cache_key] = true
-          return true
-        end
-      else
-        # If gem not available, assume allowed
-        @robots_txt_cache[cache_key] = true
-        return true
-      end
-    rescue => e
-      Rails.logger.error("Error checking robots.txt for #{url}: #{e.message}")
-      # Assume not allowed on error to be safe
-      false
-    end
-  end
   
   def categorize_articles(articles)
-    return articles if articles.blank?
-    
-    # Skip categorization if no topics defined
-    return articles if @topics.blank?
-    
-    # Create a hash of topic => keywords
-    topic_keywords = {}
-    @topics.each do |topic|
-      # Convert topic to lowercase for case-insensitive matching
-      keywords = topic.downcase.split(/[,\s]+/).reject(&:blank?)
-      topic_keywords[topic] = keywords if keywords.any?
-    end
-    
-    # Skip if no keywords defined
-    return articles if topic_keywords.empty?
-    
-    # Get stopwords for filtering
-    stopwords = Stopwords::Snowball::Filter.new("en").stopwords
+    return articles if articles.blank? || @topics.blank?
     
     articles.each do |article|
-      # Skip if already categorized
       next if article[:topic].present?
       
-      # Get text to analyze (title + description)
-      text = "#{article[:title]} #{article[:description]}".downcase
+      # Combine title and description for better context
+      text = "#{article[:title]} #{article[:description]}"
       
-      # Tokenize and filter stopwords
-      words = text.split(/[^\w]/).reject(&:blank?).reject { |w| stopwords.include?(w) }
+      # Create a prompt for the AI
+      prompt = "Classify the following news article into exactly one of these categories: #{@topics.join(', ')}.\n\nArticle: #{text}\n\nCategory:"
       
-      # Count occurrences of topic keywords
-      topic_scores = {}
-      topic_keywords.each do |topic, keywords|
-        score = 0
-        keywords.each do |keyword|
-          score += words.count { |word| word.include?(keyword) }
-        end
-        topic_scores[topic] = score if score > 0
-      end
-      
-      # Assign the topic with the highest score
-      if topic_scores.any?
-        article[:topic] = topic_scores.max_by { |_, score| score }.first
+      begin
+        response = OpenAI::Client.new.chat(
+          parameters: {
+            model: "gpt-3.5-turbo",
+            messages: [{ role: "user", content: prompt }],
+            temperature: 0.3, # Lower temperature for more consistent categorization
+            max_tokens: 10
+          }
+        )
+        
+        # Extract the topic from the response
+        predicted_topic = response.dig("choices", 0, "message", "content")&.strip&.downcase
+        
+        # Assign the topic if it's in our list of valid topics
+        article[:topic] = predicted_topic if @topics.include?(predicted_topic)
+      rescue => e
+        Rails.logger.error("Error categorizing article: #{e.message}")
+        # Skip this article if classification fails
+        next
       end
     end
     
     articles
-  end
-  
-  def train_classifier(classifier)
-    # Sample training data for each topic
-    {
-      'politics' => [
-        'government election president vote democracy congress senate parliament',
-        'political party campaign ballot democratic republican liberal conservative',
-        'policy legislation law bill amendment constitution court supreme',
-        'foreign affairs diplomacy international relations treaty sanctions'
-      ],
-      'business' => [
-        'economy market stock shares investment profit loss',
-        'company corporation business CEO executive industry sector',
-        'trade commerce retail consumer product service',
-        'finance bank loan interest rate mortgage debt credit'
-      ],
-      'technology' => [
-        'computer software hardware internet web digital online',
-        'app application mobile smartphone device gadget',
-        'data algorithm AI artificial intelligence machine learning',
-        'cybersecurity hack breach encryption privacy'
-      ],
-      'science' => [
-        'research study experiment laboratory scientist',
-        'discovery innovation breakthrough development',
-        'physics chemistry biology astronomy space',
-        'environment climate ecosystem sustainability'
-      ],
-      'health' => [
-        'medical doctor hospital patient treatment therapy',
-        'disease illness condition symptom diagnosis cure',
-        'medicine drug pharmaceutical vaccine immunity',
-        'wellness fitness nutrition diet exercise'
-      ],
-      'sports' => [
-        'game match tournament championship competition',
-        'team player coach athlete score win lose',
-        'football soccer basketball baseball hockey tennis golf',
-        'olympic medal record performance stadium'
-      ],
-      'entertainment' => [
-        'movie film actor actress director cinema',
-        'music song artist band concert album',
-        'television show series episode streaming',
-        'celebrity star award festival performance'
-      ]
-    }.each do |topic, examples|
-      examples.each do |example|
-        classifier.train(topic, example)
-      end
-    end
   end
   
   # Extract keywords from text
@@ -606,17 +362,21 @@ class NewsFetcher
   def save_articles(articles)
     articles.each do |article_data|
       # Skip if article already exists
-      next if Article.exists?(url: article_data.url)
+      next if Article.exists?(url: article_data[:url])
+      
+      # Find the news source by name
+      news_source = NewsSource.find_by(name: article_data[:source])
+      next unless news_source # Skip if we can't find the news source
       
       # Create new article
       Article.create!(
-        title: article_data.title,
-        summary: article_data.description,
-        url: article_data.url,
-        publish_date: article_data.published_at,
-        source: article_data.source,
-        topic: article_data.topic
+        title: article_data[:title],
+        summary: article_data[:description],
+        url: article_data[:url],
+        publish_date: article_data[:published_at],
+        news_source: news_source,  # Use the news source association
+        topic: article_data[:topic]
       )
     end
   end
-end 
+end
