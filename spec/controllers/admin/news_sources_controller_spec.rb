@@ -1,19 +1,65 @@
 require 'rails_helper'
+require 'ostruct'
 
 RSpec.describe Admin::NewsSourcesController, type: :controller do
   let(:user) { create(:user) }
   let(:admin_user) { create(:user, admin: true) }
   let(:news_source) { create(:news_source) }
+  
+  let(:valid_rss_response) {
+    <<~XML
+      <?xml version="1.0" encoding="UTF-8"?>
+      <rss version="2.0">
+        <channel>
+          <title>Hacker News</title>
+          <link>https://news.ycombinator.com/</link>
+          <description>Hacker News RSS</description>
+          <item>
+            <title>Test Article</title>
+            <link>https://example.com/article1</link>
+            <description>Test Description</description>
+            <pubDate>#{Time.now.rfc2822}</pubDate>
+          </item>
+        </channel>
+      </rss>
+    XML
+  }
+
   let(:valid_attributes) { 
     { 
       name: 'Hacker News', 
       url: 'https://hnrss.org/frontpage', 
       format: 'rss', 
       active: true,
-      is_validated: 'true'  # Add this
+      is_validated: 'true'
     } 
   }
+  
   let(:invalid_attributes) { { name: '' } }
+
+  before do
+    # Stub HTTP requests
+    stub_request(:get, "https://hnrss.org/frontpage")
+      .with(
+        headers: {
+          'Accept'=>'*/*',
+          'Accept-Encoding'=>'gzip;q=1.0,deflate;q=0.6,identity;q=0.3',
+          'Host'=>'hnrss.org',
+          'User-Agent'=>'Ruby'
+        }
+      )
+      .to_return(
+        status: 200,
+        body: valid_rss_response,
+        headers: {'Content-Type' => 'application/rss+xml'}
+      )
+
+    # Mock the validator service
+    validator_double = instance_double(SourceValidatorService)
+    allow(validator_double).to receive(:validate).and_return(true)
+    allow(validator_double).to receive(:errors).and_return([])
+    allow(SourceValidatorService).to receive(:new).and_return(validator_double)
+  end
 
   describe "GET #index" do
     context "when not signed in" do
@@ -101,11 +147,6 @@ RSpec.describe Admin::NewsSourcesController, type: :controller do
       before { sign_in admin_user }
 
       context "with valid params" do
-        before do
-          # Mock the validation service to return success
-          allow_any_instance_of(NewsSource).to receive(:validate_source).and_return(true)
-        end
-
         it "creates a new news source" do
           expect {
             post :create, params: { news_source: valid_attributes }
@@ -151,14 +192,49 @@ RSpec.describe Admin::NewsSourcesController, type: :controller do
     end
   end
 
+  describe "PUT #update" do
+    context "when signed in as admin" do
+      before { sign_in admin_user }
+
+      it "updates the news source" do
+        patch :update, params: {
+          id: news_source.id,
+          news_source: valid_attributes
+        }
+        expect(response).to redirect_to(admin_news_source_path(news_source))
+      end
+
+      it "requires validation if URL changed" do
+        patch :update, params: {
+          id: news_source.id,
+          news_source: valid_attributes.merge(
+            url: 'https://new-url.com',
+            is_validated: 'false'
+          )
+        }
+        expect(response).to have_http_status(:unprocessable_entity)
+      end
+    end
+  end
+
+  describe "DELETE #destroy" do
+    context "when signed in as admin" do
+      before { sign_in admin_user }
+
+      it "destroys the news source" do
+        news_source_to_delete = create(:news_source)
+        expect {
+          delete :destroy, params: { id: news_source_to_delete.id }
+        }.to change(NewsSource, :count).by(-1)
+      end
+    end
+  end
+
   describe "POST #validate_new" do
     context "when signed in as admin" do
       before { sign_in admin_user }
 
       it "validates a new RSS feed URL" do
-        # Mock the validation service
-        allow_any_instance_of(NewsSource).to receive(:validate_source).and_return(true)
-        
         post :validate_new, params: { 
           news_source: { url: 'https://hnrss.org/frontpage' } 
         }, format: :json
@@ -170,9 +246,12 @@ RSpec.describe Admin::NewsSourcesController, type: :controller do
       end
 
       it "handles invalid RSS feed URLs" do
-        # Mock the validation service to return error
-        allow_any_instance_of(NewsSource).to receive(:validate_source).and_return(["Invalid RSS feed"])
-        
+        # Override the validator double for this specific test
+        validator_double = instance_double(SourceValidatorService)
+        allow(validator_double).to receive(:validate).and_return(false)
+        allow(validator_double).to receive(:errors).and_return(["Invalid RSS feed"])
+        allow(SourceValidatorService).to receive(:new).and_return(validator_double)
+
         post :validate_new, params: { 
           news_source: { url: 'https://invalid-url.com' } 
         }, format: :json
@@ -190,9 +269,6 @@ RSpec.describe Admin::NewsSourcesController, type: :controller do
       before { sign_in admin_user }
 
       it "validates an existing RSS feed URL" do
-        # Mock the validation service
-        allow_any_instance_of(NewsSource).to receive(:validate_source).and_return(true)
-        
         patch :validate, params: { 
           id: news_source.id,
           news_source: { url: 'https://hnrss.org/frontpage' } 
@@ -201,6 +277,7 @@ RSpec.describe Admin::NewsSourcesController, type: :controller do
         expect(response).to have_http_status(:success)
         json_response = JSON.parse(response.body)
         expect(json_response['valid']).to be true
+        expect(json_response['message']).to eq("RSS feed validated successfully")
       end
     end
   end
