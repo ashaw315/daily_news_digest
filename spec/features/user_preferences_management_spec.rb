@@ -2,6 +2,24 @@ require 'rails_helper'
 
 RSpec.describe "User Preferences Management", type: :feature do
   let(:user) { create(:user) }
+  let(:valid_rss_response) {
+    <<~XML
+      <?xml version="1.0" encoding="UTF-8"?>
+      <rss version="2.0">
+        <channel>
+          <title>Test Feed</title>
+          <link>https://example.com</link>
+          <description>Test RSS Feed</description>
+          <item>
+            <title>Test Article</title>
+            <link>https://example.com/article1</link>
+            <description>Test Description</description>
+            <pubDate>#{Time.now.rfc2822}</pubDate>
+          </item>
+        </channel>
+      </rss>
+    XML
+  }
 
   describe "editing preferences" do
     before do
@@ -29,6 +47,15 @@ RSpec.describe "User Preferences Management", type: :feature do
         url: 'https://www.reutersagency.com/feed/',
         active: true
       )
+
+      # Stub RSS feed validations
+      stub_request(:get, "https://rss.cnn.com/rss/cnn_topstories.rss")
+        .to_return(status: 200, body: valid_rss_response, headers: { 'Content-Type' => 'application/rss+xml' })
+      stub_request(:get, "https://feeds.bbci.co.uk/news/rss.xml")
+        .to_return(status: 200, body: valid_rss_response, headers: { 'Content-Type' => 'application/rss+xml' })
+      stub_request(:get, "https://www.reutersagency.com/feed/")
+        .to_return(status: 200, body: valid_rss_response, headers: { 'Content-Type' => 'application/rss+xml' })
+
       sign_in user
     end
 
@@ -36,32 +63,19 @@ RSpec.describe "User Preferences Management", type: :feature do
       visit edit_preferences_path
       
       uncheck "topic_#{@politics_topic.name.downcase}"
-    
       click_button "Save Preferences"
-
-      # Expect error message about topics
       expect(page).to have_content("You must select at least 3 topics")
 
-      # Check the third topic again
       check "topic_#{@politics_topic.name.downcase}"
-      
-      # Now uncheck the news source
       uncheck "source_#{@cnn_source.name.downcase}"
-      
-      # Try to save with no news sources
       click_button "Save Preferences"
-
-      # Expect error message about news sources
       expect(page).to have_content("You must select at least 1 news source")
 
       check "source_#{@cnn_source.name.downcase}"
       choose "Weekly"
-      
       click_button "Save Preferences"
-      # Expect success message
       expect(page).to have_content("Preferences updated successfully")
       
-      # Verify selections persisted
       visit edit_preferences_path
       expect(page).to have_checked_field("topic_#{@technology_topic.name.downcase}")
       expect(page).to have_checked_field("topic_#{@science_topic.name.downcase}")
@@ -71,14 +85,14 @@ RSpec.describe "User Preferences Management", type: :feature do
     end
   end
 
-  describe "resetting preferences" do
+  describe "resetting preferences", js: true do
     before do
-       # Create topics
-       @technology_topic = Topic.create!(name: 'technology', active: true)
-       @science_topic = Topic.create!(name: 'science', active: true)
-       @politics_topic = Topic.create!(name: 'politics', active: true)
-   
-        # Create news sources
+      # Create topics
+      @technology_topic = Topic.create!(name: 'technology', active: true)
+      @science_topic = Topic.create!(name: 'science', active: true)
+      @politics_topic = Topic.create!(name: 'politics', active: true)
+  
+      # Create news sources
       @cnn_source = NewsSource.create!(
         name: 'CNN', 
         format: 'rss', 
@@ -97,72 +111,63 @@ RSpec.describe "User Preferences Management", type: :feature do
         url: 'https://www.reutersagency.com/feed/',
         active: true
       )
-       sign_in user
+
+      # Stub RSS feed validations
+      stub_request(:get, "https://rss.cnn.com/rss/cnn_topstories.rss")
+        .to_return(status: 200, body: valid_rss_response, headers: { 'Content-Type' => 'application/rss+xml' })
+      stub_request(:get, "https://feeds.bbci.co.uk/news/rss.xml")
+        .to_return(status: 200, body: valid_rss_response, headers: { 'Content-Type' => 'application/rss+xml' })
+      stub_request(:get, "https://www.reutersagency.com/feed/")
+        .to_return(status: 200, body: valid_rss_response, headers: { 'Content-Type' => 'application/rss+xml' })
+
+      sign_in user
     end
 
-    it "allows users to reset their preferences", js: true do
+    it "allows users to reset their preferences" do
       visit edit_preferences_path
       
-      # First, select some non-default preferences
+      # Set non-default preferences
       check "topic_#{@technology_topic.name.downcase}"
       check "topic_#{@science_topic.name.downcase}"
       check "topic_#{@politics_topic.name.downcase}"
-      check "source_#{@bbc_source.name.downcase}"  # Select BBC instead of CNN
-      choose "Weekly"  # Select weekly instead of daily
+      check "source_#{@bbc_source.name.downcase}"
+      choose "Weekly"
       
       click_button "Save Preferences"
-      expect(page).to have_content("Preferences updated successfully")
+      expect(page).to have_content("Preferences updated successfully", wait: 5)
       
-      # Now reset preferences
+      # Reset preferences
       click_button "Reset Preferences"
+      expect(page).to have_selector('#reset-modal', visible: true, wait: 5)
       
-      # Check that the modal appears
-      expect(page).to have_selector('#reset-modal', visible: true)
-      
-      # Debug - print the modal content
-      puts "Modal content:"
-      puts page.find('#reset-modal').text
-      
-      # Confirm reset in the modal
       within('#reset-modal') do
         click_button "Yes, Reset"
       end
       
-      # Debug - print the page content
-      puts "Page content after reset:"
-      puts page.body
+      expect(page).to have_content("Preferences have been reset", wait: 5)
       
-      # Check for success message
-      expect(page).to have_content("Preferences have been reset")
-      
-      # Verify preferences were reset to defaults in the database
+      # Verify reset in database
       user.reload
-      
-      # Should have the first 3 topics
       expect(user.topics.count).to eq(3)
       expect(user.topics).to include(@technology_topic, @science_topic, @politics_topic)
-      
-      # Should have the first news source
       expect(user.news_sources.count).to eq(1)
       expect(user.news_sources).to include(@cnn_source)
-      
-      # Should have default email frequency
       expect(user.preferences.email_frequency).to eq('daily')
     end
 
-    it "cancels reset when clicking cancel in modal", js: true do
+    it "cancels reset when clicking cancel in modal" do
       visit edit_preferences_path
 
       click_button "Reset Preferences"
+      expect(page).to have_selector('#reset-modal', visible: true, wait: 5)
       
       within('#reset-modal') do
         click_button "Cancel"
       end
       
-      # Modal should be hidden
-      expect(page).to have_selector('#reset-modal', visible: false)
+      expect(page).to have_selector('#reset-modal', visible: false, wait: 5)
       
-      # Preferences should remain unchanged (default preferences)
+      # Verify preferences unchanged
       expect(page).to have_checked_field("topic_#{@technology_topic.name.downcase}")
       expect(page).to have_checked_field("topic_#{@science_topic.name.downcase}")
       expect(page).to have_checked_field("topic_#{@politics_topic.name.downcase}")
@@ -172,8 +177,11 @@ RSpec.describe "User Preferences Management", type: :feature do
   end
 
   describe "navigation" do
-    it "can access preferences from navigation menu" do
+    before do
       sign_in user
+    end
+
+    it "can access preferences from navigation menu" do
       visit root_path
       expect(page).to have_link("Manage Preferences")
       click_link "Manage Preferences"

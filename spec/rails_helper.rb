@@ -8,9 +8,40 @@ require 'rspec/rails'
 require 'capybara/rspec'
 require 'devise'
 require 'database_cleaner/active_record'
+require 'webmock/rspec'
 
 # Enable auto-loading of support files
 Dir[Rails.root.join('spec/support/**/*.rb')].sort.each { |f| require f }
+
+# Configure WebMock
+WebMock.disable_net_connect!(
+  allow_localhost: true,
+  allow: [
+    'chromedriver.storage.googleapis.com',
+    'googlechromelabs.github.io',
+    '127.0.0.1',
+    'localhost'
+  ]
+)
+
+# Configure Capybara
+Capybara.register_driver :selenium_chrome_headless do |app|
+  options = Selenium::WebDriver::Chrome::Options.new
+  options.add_argument('--headless')
+  options.add_argument('--no-sandbox')
+  options.add_argument('--disable-dev-shm-usage')
+  options.add_argument('--disable-gpu')
+  options.add_argument('--window-size=1400,1400')
+  
+  Capybara::Selenium::Driver.new(
+    app,
+    browser: :chrome,
+    options: options
+  )
+end
+
+Capybara.javascript_driver = :selenium_chrome_headless
+Capybara.default_max_wait_time = 5
 
 # Fix for transactional fixtures
 class ActiveRecord::Base
@@ -54,4 +85,16 @@ RSpec.configure do |config|
   config.include Warden::Test::Helpers
   config.include FactoryBot::Syntax::Methods
   config.include ActiveJob::TestHelper
+
+  # Save screenshots on failure for JavaScript tests
+  config.after(:each, type: :feature, js: true) do |example|
+    if example.exception
+      page.save_screenshot("tmp/capybara/#{example.full_description.parameterize}.png")
+    end
+  end
+
+  # Clean up uploaded screenshots
+  config.after(:suite) do
+    FileUtils.rm_rf("tmp/capybara")
+  end
 end

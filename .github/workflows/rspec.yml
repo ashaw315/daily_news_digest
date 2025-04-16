@@ -29,6 +29,10 @@ jobs:
       RAILS_ENV: test
       DATABASE_URL: postgres://postgres:postgres@localhost:5432/test
       RAILS_MASTER_KEY: ${{ secrets.RAILS_MASTER_KEY }}
+      # Add these environment variables for Chrome
+      CHROME_BIN: /usr/bin/google-chrome
+      CHROME_PATH: /usr/bin/google-chrome
+      DISPLAY: :99
 
     steps:
     - uses: actions/checkout@v3
@@ -36,7 +40,7 @@ jobs:
     - name: Set up Ruby
       uses: ruby/setup-ruby@v1
       with:
-        ruby-version: '3.2.2' # Replace with your Ruby version
+        ruby-version: '3.2.2'
         bundler-cache: true
     
     - name: Install dependencies
@@ -44,11 +48,23 @@ jobs:
         gem install bundler
         bundle install --jobs 4 --retry 3
     
+    - name: Install Chrome dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y xvfb libnss3 libgconf-2-4 libxss1 libasound2
+
     - name: Set up Chrome
       uses: browser-actions/setup-chrome@latest
+      with:
+        chrome-version: stable
     
     - name: Set up Chromedriver
       uses: nanasess/setup-chromedriver@master
+    
+    - name: Start Xvfb
+      run: |
+        Xvfb :99 -screen 0 1280x1024x24 > /dev/null 2>&1 &
+        sleep 3  # Give xvfb time to start
     
     - name: Set up database
       run: |
@@ -57,7 +73,17 @@ jobs:
     
     - name: Run tests
       run: |
-        export DISPLAY=:99
+        # Start Chrome driver
         chromedriver --version
-        sudo Xvfb -ac :99 -screen 0 1280x1024x24 > /dev/null 2>&1 &
+        chromedriver &
+        sleep 3  # Give chromedriver time to start
+        
+        # Run the tests
         bundle exec rspec
+
+    - name: Upload screenshots on failure
+      if: failure()
+      uses: actions/upload-artifact@v2
+      with:
+        name: capybara-screenshots
+        path: tmp/capybara
