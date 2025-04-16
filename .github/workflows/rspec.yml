@@ -29,13 +29,12 @@ jobs:
       RAILS_ENV: test
       DATABASE_URL: postgres://postgres:postgres@localhost:5432/test
       RAILS_MASTER_KEY: ${{ secrets.RAILS_MASTER_KEY }}
-      # Add these environment variables for Chrome
       CHROME_BIN: /usr/bin/google-chrome
       CHROME_PATH: /usr/bin/google-chrome
       DISPLAY: :99
 
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
     
     - name: Set up Ruby
       uses: ruby/setup-ruby@v1
@@ -73,17 +72,14 @@ jobs:
     
     - name: Run tests
       run: |
-        # Start Chrome driver
         chromedriver --version
         chromedriver &
-        sleep 3  # Give chromedriver time to start
-        
-        # Run the tests
+        sleep 3
         bundle exec rspec
 
     - name: Upload screenshots on failure
       if: failure()
-      uses: actions/upload-artifact@v3.1.3
+      uses: actions/upload-pages-artifact@v3
       with:
         name: capybara-screenshots
         path: tmp/capybara
