@@ -74,6 +74,8 @@ RSpec.configure do |config|
       with.library :rails
     end
   end
+
+  Dir[Rails.root.join('spec/support/**/*.rb')].each { |f| require f }
   
   # Devise helpers
   config.include Devise::Test::IntegrationHelpers, type: :feature

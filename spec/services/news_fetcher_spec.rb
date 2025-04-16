@@ -1,18 +1,27 @@
 require 'rails_helper'
 
 RSpec.describe NewsFetcher, type: :service do
+  include_context "rss validation stubs"
   let(:fetcher) { NewsFetcher.new }
   
   before(:all) do
-    # Check if HTTParty is available, if not, stub it
     unless defined?(HTTParty)
       class_double("HTTParty").as_stubbed_const
     end
     
-    # Check if Feedjira is available, if not, stub it
     unless defined?(Feedjira)
       class_double("Feedjira").as_stubbed_const
     end
+  end
+
+  # Add this at the top level of the describe block
+  before do
+    # Stub any HTTP requests that might occur
+    stub_request(:get, /.*/).to_return(
+      status: 200,
+      body: rss_feed_xml,
+      headers: {'Content-Type' => 'application/rss+xml'}
+    )
   end
   
   describe "#initialize" do
@@ -273,32 +282,82 @@ RSpec.describe NewsFetcher, type: :service do
       ]
     end
     
-    it "enhances articles with full content" do
-      # Create a fetcher with detailed_preview enabled
-      preview_fetcher = NewsFetcher.new(detailed_preview: true)
-      
-      # Stub fetch_full_content to return a sample full content
-      allow(preview_fetcher).to receive(:fetch_full_content).and_return("This is the full content of the article. It has multiple sentences and paragraphs.")
-      
-      # Stub summarizer to be nil for this test
-      preview_fetcher.instance_variable_set(:@summarizer, nil)
-      
-      enhanced_articles = preview_fetcher.send(:enhance_articles_with_detailed_summaries, articles)
-      
-      expect(enhanced_articles.first[:content]).to eq("This is the full content of the article. It has multiple sentences and paragraphs.")
-      expect(enhanced_articles.first[:description]).to include("This is the full content")
+    let(:html_content) do
+      <<~HTML
+        <!DOCTYPE html>
+        <html>
+          <body>
+            <article class="article-content">
+              <p>This is the full content of the article.</p>
+              <p>It has multiple sentences and paragraphs.</p>
+              <p>Adding a third paragraph to meet the minimum length requirement.</p>
+              <p>And a fourth paragraph to ensure we have enough content.</p>
+            </article>
+          </body>
+        </html>
+      HTML
+    end
+  
+    before do
+      # Mock Rails logger
+      allow(Rails.logger).to receive(:info)
+      allow(Rails.logger).to receive(:warn)
+      allow(Rails.logger).to receive(:error)
+  
+      # Mock Rails cache
+      allow(Rails.cache).to receive(:read).and_return(nil)
+      allow(Rails.cache).to receive(:write).and_return(nil)
+  
+      # Create a mock response object
+      mock_response = double('Response')
+      allow(mock_response).to receive(:read).and_return(html_content)
+  
+      # Stub URI.open
+      allow(URI).to receive(:open).with(
+        anything,
+        hash_including(
+          'User-Agent' => anything,
+          'Accept' => anything,
+          'Accept-Language' => anything
+        )
+      ).and_return(mock_response)
+  
+      # Stub HTTParty for RSS feed
+      stub_request(:get, "http://example.com/article").
+        to_return(status: 200, body: html_content, headers: {'Content-Type' => 'text/html'})
     end
     
-    it "skips articles without a URL" do
-      # Create article without URL
-      article_without_url = { title: "No URL Article", description: "Description" }.with_indifferent_access
-      
-      # Create a fetcher with detailed_preview enabled
+    it "enhances articles with full content" do
+      # Create fetcher with detailed preview enabled
       preview_fetcher = NewsFetcher.new(detailed_preview: true)
       
+      # Disable AI summarizer
+      preview_fetcher.instance_variable_set(:@summarizer, nil)
+      
+      # Call the method
+      enhanced_articles = preview_fetcher.send(:enhance_articles_with_detailed_summaries, articles)
+      
+      # Debug output
+      puts "Enhanced article content: #{enhanced_articles.first[:content].inspect}"
+      puts "Enhanced article description: #{enhanced_articles.first[:description].inspect}"
+      
+      # Add expectations
+      aggregate_failures do
+        expect(enhanced_articles.first[:content]).not_to be_nil
+        expect(enhanced_articles.first[:content].to_s).to include("This is the full content")
+        expect(enhanced_articles.first[:description].to_s).to include("This is the full content")
+      end
+    end
+  
+    it "skips articles without a URL" do
+      article_without_url = { 
+        title: "No URL Article", 
+        description: "Description" 
+      }.with_indifferent_access
+      
+      preview_fetcher = NewsFetcher.new(detailed_preview: true)
       enhanced_articles = preview_fetcher.send(:enhance_articles_with_detailed_summaries, [article_without_url])
       
-      # The article should still be returned but not enhanced
       expect(enhanced_articles.first[:title]).to eq("No URL Article")
       expect(enhanced_articles.first[:content]).to be_nil
     end
