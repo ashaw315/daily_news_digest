@@ -90,17 +90,18 @@ class NewsFetcher
           article[:content] = full_content
           
           # Generate AI summary
+          desired_word_count = 250 # or 300, or make this a constant/configurable
+
           if @summarizer
             Rails.logger.info("Generating AI summary for: #{article[:title]}")
-            summary = @summarizer.summarize(full_content)
-            
-            # Explicitly update the description
+            summary = @summarizer.summarize(full_content, desired_word_count)
             article[:description] = summary
-            
-            Rails.logger.info("Summary generated: #{summary.truncate(100)}")
+            Rails.logger.info("Summary generated: #{summary.split.size} words")
           else
-            # If no AI summarizer, create a simple summary
-            article[:description] = full_content.split(/\s+/).take(200).join(' ') + '...'
+            # Fallback: take the first N words
+            words = full_content.split(/\s+/)
+            article[:description] = words.take(desired_word_count).join(' ')
+            article[:description] += '...' if words.length > desired_word_count
           end
           
           Rails.logger.info("Successfully processed article: #{article[:title]}")

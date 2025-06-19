@@ -56,6 +56,7 @@ gem 'feedjira'                # For RSS feed parsing
 gem 'httparty'                # For API requests
 gem 'nokogiri'                # For HTML parsing
 gem 'rss'
+gem 'ruby-readability'
 
 # Optional - uncomment if you want to check robots.txt rules
 # gem 'robotstxt-parser'      # For checking robots.txt rules

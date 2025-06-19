@@ -1,80 +1,94 @@
+# app/services/enhanced_news_fetcher.rb
+
+require 'feedjira'
+require 'open-uri'
+require 'net/http'
+require 'json'
+require 'nokogiri'
+
 class EnhancedNewsFetcher
+  USER_AGENT = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+
   def initialize(options = {})
     @options = options
-    @rotator = SourceRotator.new
-    @fetcher = NewsFetcher.new(options)
+    @sources = options[:sources] || []
+    @max_articles = options[:max_articles] || 50
+    @summarizer = AiSummarizerService.new
   end
-  
+
   def fetch_articles
-    # Get prioritized sources
-    prioritized_sources = @rotator.prioritized_sources
-    
-    # If user has preferred source for News of the Day Brief, prioritize it
-    if @options[:preferred_source].present?
-      prioritized_sources.unshift(@options[:preferred_source]) 
-      prioritized_sources.uniq!
-    end
-    
-    # Update fetcher with prioritized sources
-    sources = @fetcher.sources.sort_by do |source|
-      prioritized_sources.index(source[:name]) || Float::INFINITY
-    end
-    
-    @fetcher.instance_variable_set(:@sources, sources)
-    
-    # Fetch articles with timing
     articles = []
-    sources.each do |source|
-      start_time = Time.now
-      success = false
-      
+    @sources.each do |source|
       begin
-        new_articles = fetch_from_source(source)
+        new_articles = fetch_from_rss_and_summarize(source)
         articles.concat(new_articles)
-        success = true
+        break if articles.length >= @max_articles
       rescue => e
-        Rails.logger.error("Error fetching from #{source[:name]}: #{e.message}")
+        Rails.logger.error("Error fetching from #{source.name}: #{e.message}")
+        source.update(
+          last_fetched_at: Time.current,
+          last_fetch_status: 'error',
+          last_fetch_article_count: 0
+        )
       end
-      
-      # Record stats
-      response_time = Time.now - start_time
-      @rotator.update_source_stats(source[:name], success, response_time)
-      
-      # If we have enough articles, stop fetching
-      break if articles.length >= (@options[:max_articles] || 50)
     end
-    
     articles
   end
-  
-  def fetch_news_of_the_day_brief(count = 5)
-    # Fetch articles with preference for user's preferred source
-    articles = fetch_articles
-    
-    # Select top articles based on recency and source preference
-    articles.sort_by do |article|
-      # Newer articles get higher priority
-      recency_score = article.published_at.to_i
-      
-      # Preferred source gets a boost
-      source_boost = article.source == @options[:preferred_source] ? 1.day.to_i : 0
-      
-      recency_score + source_boost
-    end.take(count)
-  end
-  
+
   private
-  
-  def fetch_from_source(source)
-    case source[:type]
-    when :rss
-      @fetcher.send(:fetch_from_rss, source)
-    when :api
-      @fetcher.send(:fetch_from_api, source)
-    when :scrape
-      @fetcher.send(:fetch_from_scraper, source)
-    else
-      []
+
+  def fetch_full_content_with_fivefilters(url)
+    api_url = "https://ftr.fivefilters.net/makefulltextfeed.php?url=#{URI.encode_www_form_component(url)}&format=json"
+    uri = URI(api_url)
+    request = Net::HTTP::Get.new(uri)
+    request['User-Agent'] = USER_AGENT
+
+    response = Net::HTTP.start(uri.hostname, uri.port, use_ssl: true) do |http|
+      http.request(request)
     end
+
+    data = JSON.parse(response.body)
+    if data["rss"] && data["rss"]["channel"] && data["rss"]["channel"]["item"] && data["rss"]["channel"]["item"][0]
+      html = data["rss"]["channel"]["item"][0]["description"]
+      Nokogiri::HTML(html).text
+    else
+      ""
+    end
+  rescue => e
+    Rails.logger.warn("FiveFilters failed for #{url}: #{e.message}")
+    ""
   end
-end 
+
+  def fetch_from_rss_and_summarize(source)
+    # Use open-uri with custom User-Agent for RSS fetch
+    xml = URI.open(source.url, "User-Agent" => USER_AGENT).read
+    feed = Feedjira.parse(xml)
+    entries = feed.entries.take(@max_articles)
+
+    articles = entries.map do |entry|
+      url = entry.url || entry.link
+      full_content = fetch_full_content_with_fivefilters(url)
+      full_content = entry.summary || entry.content || "" if full_content.blank?
+
+      summary = @summarizer.summarize(full_content, 250)
+
+      {
+        title: entry.title,
+        description: summary,
+        url: url,
+        published_at: entry.published || Time.now,
+        topic: nil, # You can add categorization here if needed
+        source: source.name
+      }
+    end
+
+    # Update NewsSource fetch stats
+    source.update(
+      last_fetched_at: Time.current,
+      last_fetch_status: 'success',
+      last_fetch_article_count: articles.size
+    )
+
+    articles
+  end
+end

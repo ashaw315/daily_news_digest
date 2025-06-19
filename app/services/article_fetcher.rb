@@ -7,21 +7,14 @@ class ArticleFetcher
     # Create options for the fetcher
     options = {
       sources: sources,
-      max_articles: 50, # or whatever makes sense for your digest
+      max_articles: 50,
       days: days
     }
 
     # Fetch personalized articles
     fetcher = EnhancedNewsFetcher.new(options)
-    articles = fetcher.fetch_news_of_the_day_brief
+    articles = fetcher.fetch_articles
 
-    # Convert to match your schema if needed
-    articles.map do |article|
-      if article.is_a?(OpenStruct)
-        article.summary = article.description if article.respond_to?(:description)
-        article.publish_date = article.published_at if article.respond_to?(:published_at)
-      end
-      article
-    end
+    articles
   end
 end

@@ -163,6 +163,7 @@ GEM
     ffi (1.17.1-x86_64-linux-musl)
     globalid (1.2.1)
       activesupport (>= 6.1)
+    guess_html_encoding (0.0.11)
     hashdiff (1.1.2)
     httparty (0.22.0)
       csv
@@ -353,6 +354,9 @@ GEM
       faraday (>= 1)
       faraday-multipart (>= 1)
     ruby-progressbar (1.13.0)
+    ruby-readability (0.7.2)
+      guess_html_encoding (>= 0.0.4)
+      nokogiri (>= 1.6.0)
     rubyzip (2.4.1)
     sassc (2.4.0)
       ffi (~> 1.9)
@@ -466,6 +470,7 @@ DEPENDENCIES
   rss
   rubocop (~> 1.75)
   ruby-openai
+  ruby-readability
   sassc-rails
   selenium-webdriver
   shoulda-matchers

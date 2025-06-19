@@ -1,18 +1,28 @@
-<div class="container mt-4">
-  <div class="card">
-    <div class="card-header">
-      <h1><%= @source.name %></h1>
-    </div>
-    <div class="card-body">
+<div class="admin-main">
+  <div class="admin-card">
+    <div class="admin-card-title"><%= @source.name %></div>
+    <div>
       <p><strong>URL:</strong> <%= @source.url %></p>
       <p><strong>Format:</strong> <%= @source.format %></p>
-      <p><strong>Status:</strong> <%= @source.active? ? 'Active' : 'Inactive' %></p>
-      <p><strong>Settings:</strong> <pre><%= JSON.pretty_generate(@source.settings) rescue @source.settings.to_json %></pre></p>
-      
-      <div class="mt-3">
-        <%= link_to 'Preview', preview_admin_news_source_path(@source), class: 'btn btn-primary' %>
-        <%= link_to 'Edit', edit_admin_news_source_path(@source), class: 'btn btn-warning' %>
-        <%= link_to 'Back', admin_news_sources_path, class: 'btn btn-secondary' %>
+      <p>
+        <strong>Status:</strong>
+        <% if @source.active? %>
+          <span class="status-badge status-active">Active</span>
+        <% else %>
+          <span class="status-badge status-inactive">Inactive</span>
+        <% end %>
+      </p>
+      <% if @source.settings.present? %>
+        <p><strong>Settings:</strong>
+          <pre style="background: #f8f8f8; border-radius: 6px; padding: 10px; font-size: 13px;">
+<%= JSON.pretty_generate(@source.settings) rescue @source.settings.to_json %>
+          </pre>
+        </p>
+      <% end %>
+      <div style="margin-top: 18px;">
+        <%= link_to 'Preview', preview_admin_news_source_path(@source), class: 'admin-btn', style: "margin-right: 10px;" %>
+        <%= link_to 'Edit', edit_admin_news_source_path(@source), class: 'admin-btn admin-btn-secondary', style: "margin-right: 10px;" %>
+        <%= link_to 'Back', admin_news_sources_path, class: 'admin-btn admin-btn-secondary' %>
       </div>
     </div>
   </div>
