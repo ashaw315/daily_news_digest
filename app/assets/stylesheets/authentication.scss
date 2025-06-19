@@ -1,0 +1,340 @@
+ /* Authentication Pages Styling */
+ 
+ // ***** SIGN IN PAGE *****
+.auth-container {
+    max-width: 480px;
+    margin: 40px auto;
+    padding: 30px;
+    background-color: #fff;
+    border: 1px solid #e2e2e2;
+  }
+  
+  .auth-header {
+    text-align: center;
+    margin-bottom: 30px;
+  }
+  
+  .auth-title {
+    font-family: 'Playfair Display', Georgia, serif;
+    font-size: 32px;
+    font-weight: 700;
+    margin-bottom: 15px;
+    color: #000;
+  }
+  
+  .auth-divider {
+    height: 2px;
+    width: 60px;
+    background-color: #000;
+    margin: 0 auto;
+  }
+  
+  .auth-form {
+    margin-bottom: 25px;
+  }
+  
+  .form-group {
+    margin-bottom: 20px;
+  }
+  
+  .form-label {
+    display: block;
+    font-family: 'Source Sans Pro', Arial, sans-serif;
+    font-size: 14px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin-bottom: 8px;
+    color: #333;
+  }
+  
+  .form-input {
+    width: 100%;
+    padding: 12px 15px;
+    font-family: 'Source Sans Pro', Arial, sans-serif;
+    font-size: 16px;
+    border: 1px solid #ccc;
+    background-color: #fff;
+    transition: border-color 0.3s;
+  }
+  
+  .form-input:focus {
+    outline: none;
+    border-color: #000;
+  }
+  
+  .remember-me {
+    display: flex;
+    align-items: center;
+    margin-top: -5px;
+  }
+  
+  .form-checkbox {
+    margin-right: 8px;
+  }
+  
+  .form-checkbox-label {
+    font-size: 14px;
+    color: #555;
+  }
+  
+  .form-actions {
+    margin-top: 30px;
+  }
+  
+  .auth-button {
+    width: 100%;
+    padding: 12px 20px;
+    background-color: #000;
+    color: #fff;
+    font-family: 'Source Sans Pro', Arial, sans-serif;
+    font-size: 14px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    border: none;
+    cursor: pointer;
+    transition: background-color 0.3s;
+  }
+  
+  .auth-button:hover {
+    background-color: #333;
+  }
+  
+  .auth-links {
+    margin-top: 25px;
+    text-align: center;
+    font-size: 14px;
+  }
+  
+  .auth-links a {
+    color: #555;
+    text-decoration: none;
+    margin: 0 10px;
+    position: relative;
+  }
+  
+  .auth-links a:after {
+    content: '';
+    position: absolute;
+    width: 0;
+    height: 1px;
+    bottom: -2px;
+    left: 0;
+    background-color: #000;
+    transition: width 0.3s;
+  }
+  
+  .auth-links a:hover {
+    color: #000;
+  }
+  
+  .auth-links a:hover:after {
+    width: 100%;
+  }
+  
+  /* Responsive adjustments */
+  @media (max-width: 576px) {
+    .auth-container {
+      padding: 20px;
+      margin: 20px auto;
+      border: none;
+    }
+    
+    .auth-title {
+      font-size: 28px;
+    }
+    
+    .form-input {
+      padding: 10px;
+    }
+  }
+
+// ***** SIGN UP PAGE *****
+/* Error messages */
+.form-errors {
+    margin-bottom: 25px;
+    padding: 15px;
+    border-left: 4px solid #c53030;
+    background-color: #f8f9fa;
+  }
+  
+  .form-errors h3 {
+    font-family: 'Source Sans Pro', Arial, sans-serif;
+    font-size: 16px;
+    font-weight: 600;
+    margin-bottom: 10px;
+    color: #333;
+  }
+  
+  .form-errors ul {
+    margin: 0;
+    padding-left: 20px;
+  }
+  
+  .form-errors li {
+    font-size: 14px;
+    margin-bottom: 5px;
+    color: #555;
+  }
+  
+  /* Password hint */
+  .password-hint {
+    display: block;
+    font-size: 12px;
+    color: #666;
+    font-style: italic;
+    margin-top: -4px;
+    margin-bottom: 6px;
+  }
+  
+  /* Registration specific form tweaks */
+  .auth-container .auth-form {
+    margin-bottom: 20px;
+  }
+  
+  /* Adjust spacing for longer forms */
+  .auth-container {
+    margin: 40px auto 60px;
+  }
+  
+  @media (max-width: 576px) {
+    .form-errors {
+      padding: 12px;
+    }
+    
+    .form-errors h3 {
+      font-size: 14px;
+    }
+    
+    .form-errors li {
+      font-size: 13px;
+    }
+  }
+
+// ***** RESEND CONFIRMATION PAGE *****
+.auth-subtitle {
+    font-family: 'Source Sans Pro', Arial, sans-serif;
+    font-size: 15px;
+    color: #555;
+    line-height: 1.5;
+    margin: 20px auto 0;
+    max-width: 400px;
+    text-align: center;
+  }
+  
+  /* Adjust spacing for confirmation page */
+  .auth-container .auth-form {
+    margin-top: 25px;
+  }
+  
+  /* Ensure proper error message styling */
+  .devise-shared-error-messages {
+    margin-bottom: 25px;
+    padding: 15px;
+    border-left: 4px solid #c53030;
+    background-color: #f8f9fa;
+  }
+  
+  .devise-shared-error-messages h2 {
+    font-family: 'Source Sans Pro', Arial, sans-serif;
+    font-size: 16px;
+    font-weight: 600;
+    margin-bottom: 10px;
+    color: #333;
+  }
+  
+  .devise-shared-error-messages ul {
+    margin: 0;
+    padding-left: 20px;
+  }
+  
+  .devise-shared-error-messages li {
+    font-size: 14px;
+    margin-bottom: 5px;
+    color: #555;
+  }
+  
+  /* Make sure form input is readable */
+  .form-input {
+    color: #000;
+  }
+  
+  /* Responsive adjustments */
+  @media (max-width: 576px) {
+    .auth-subtitle {
+      font-size: 14px;
+      padding: 0 10px;
+    }
+    
+    .auth-button {
+      font-size: 13px;
+      padding: 10px 15px;
+    }
+  }
+
+// ***** FORGOT PASSWORD PAGE *****
+.auth-container form[action*="password"] {
+    margin-top: 25px;
+  }
+  
+  /* Enhance auth-subtitle styling */
+  .auth-subtitle {
+    font-family: 'Source Sans Pro', Arial, sans-serif;
+    font-size: 15px;
+    color: #555;
+    line-height: 1.5;
+    margin: 20px auto 0;
+    max-width: 400px;
+    text-align: center;
+  }
+  
+  /* Add a subtle background to the auth container */
+  .auth-container {
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+    border-radius: 0;
+    border: 1px solid #e2e2e2;
+  }
+  
+  /* Enhance form focus states */
+  .form-input:focus {
+    outline: none;
+    border-color: #000;
+    box-shadow: 0 0 0 1px #000;
+  }
+  
+  /* Add a subtle hover effect to the auth button */
+  .auth-button:hover {
+    background-color: #333;
+  }
+  
+  /* Enhance the divider */
+  .auth-divider {
+    height: 2px;
+    width: 60px;
+    background-color: #000;
+    margin: 0 auto;
+  }
+  
+  /* Media queries for responsive design */
+  @media (max-width: 576px) {
+    .auth-container {
+      margin: 15px auto 40px;
+      border: none;
+      box-shadow: none;
+      padding: 20px 15px;
+    }
+    
+    .auth-title {
+      font-size: 26px;
+    }
+    
+    .auth-subtitle {
+      font-size: 14px;
+      padding: 0 5px;
+    }
+    
+    .form-label {
+      font-size: 13px;
+    }
+  }

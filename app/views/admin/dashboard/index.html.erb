@@ -1,47 +1,76 @@
-<div class="container mt-4">
-  <h1>Admin Dashboard</h1>
+<% content_for :title, "Admin Dashboard" %>
+
+<div class="dashboard-overview">
+  <div class="stat-cards">
+    <div class="stat-card">
+      <h3 class="stat-label">Total Users</h3>
+      <p class="stat-value"><%= @user_count %></p>
+      <%= link_to admin_users_path, class: "stat-link" do %>
+        Manage Users <span class="link-arrow">→</span>
+      <% end %>
+    </div>
+    
+    <div class="stat-card">
+      <h3 class="stat-label">Topics</h3>
+      <p class="stat-value"><%= Topic.count %></p>
+      <%= link_to admin_topics_path, class: "stat-link" do %>
+        Manage Topics <span class="link-arrow">→</span>
+      <% end %>
+    </div>
+    
+    <div class="stat-card">
+      <h3 class="stat-label">News Sources</h3>
+      <p class="stat-value"><%= @source_count %></p>
+      <%= link_to admin_news_sources_path, class: "stat-link" do %>
+        Manage Sources <span class="link-arrow">→</span>
+      <% end %>
+    </div>
+  </div>
   
-  <div class="row mt-4">
-    <div class="col-md-4">
-      <div class="card">
-        <div class="card-body">
-          <h5 class="card-title">Users</h5>
-          <p class="card-text">Total: <%= @user_count %></p>
-          <%= link_to 'Manage Users', admin_users_path, class: 'btn btn-primary' %>
+  <div class="dashboard-section">
+    <div class="admin-card">
+      <h2 class="admin-card-title">Email Performance</h2>
+      
+      <div class="metrics-summary">
+        <div class="metric-item">
+          <span class="metric-value"><%= @email_metrics[:sent] || 0 %></span>
+          <span class="metric-label">Sent</span>
+        </div>
+        
+        <div class="metric-item">
+          <span class="metric-value"><%= @email_metrics[:opened] || 0 %></span>
+          <span class="metric-label">Opened</span>
+          <% if @email_metrics[:sent] && @email_metrics[:sent] > 0 %>
+            <span class="metric-rate"><%= ((@email_metrics[:opened] || 0).to_f / @email_metrics[:sent] * 100).round(1) %>%</span>
+          <% end %>
+        </div>
+        
+        <div class="metric-item">
+          <span class="metric-value"><%= @email_metrics[:clicked] || 0 %></span>
+          <span class="metric-label">Clicked</span>
+          <% if @email_metrics[:opened] && @email_metrics[:opened] > 0 %>
+            <span class="metric-rate"><%= ((@email_metrics[:clicked] || 0).to_f / @email_metrics[:opened] * 100).round(1) %>%</span>
+          <% end %>
+        </div>
+        
+        <div class="metric-item">
+          <span class="metric-value <%= @email_metrics[:failed] && @email_metrics[:failed] > 0 ? 'text-danger' : '' %>">
+            <%= @email_metrics[:failed] || 0 %>
+          </span>
+          <span class="metric-label">Failed</span>
         </div>
       </div>
-    </div>
-    
-    <div class="col-md-4">
-      <div class="card">
-        <div class="card-body">
-          <h5 class="card-title">Topics</h5>
-          <p class="card-text">Total: <%= Topic.count %></p>
-          <%= link_to 'Manage Topics', admin_topics_path, class: 'btn btn-primary' %>
-        </div>
-      </div>
-    </div>
-    
-    <div class="col-md-4">
-      <div class="card">
-        <div class="card-body">
-          <h5 class="card-title">News Sources</h5>
-          <p class="card-text">Total: <%= @source_count %></p>
-          <%= link_to 'Manage Sources', admin_news_sources_path, class: 'btn btn-primary' %>
-        </div>
+      
+      <div class="admin-card-footer">
+        <%= link_to 'View Detailed Metrics', admin_email_metrics_path, class: 'admin-btn admin-btn-secondary' %>
       </div>
     </div>
   </div>
   
-  <div class="row mt-4">
-    <div class="col-md-12">
-      <div class="card">
-        <div class="card-body">
-          <h5 class="card-title">Email Metrics</h5>
-          <p class="card-text">Total Emails Sent: <%= @email_metrics.count %></p>
-          <%= link_to 'View Email Metrics', admin_email_metrics_path, class: 'btn btn-primary' %>
-        </div>
-      </div>
+  <div class="dashboard-section">
+    <div class="admin-card">
+      <h2 class="admin-card-title">Recent Activity</h2>
+      <p class="no-activity-message">No recent activity to display.</p>
     </div>
   </div>
 </div>

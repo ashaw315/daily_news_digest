@@ -1,27 +1,35 @@
-<div class="container">
-  <div class="jumbotron mt-4">
-    <h1>Welcome to News Digest</h1>
-    <p class="lead">Your personalized news aggregator</p>
+<div class="news-container">
+  <div class="header-section">
+    <h1 class="main-title">Daily News Digest</h1>
+    <p class="subtitle">Your personalized news aggregator</p>
     
-    <% if user_signed_in? %>
-      <p>You are signed in as <%= current_user.email %></p>
-      <% if current_user.admin? %>
-        <%= link_to "Admin Dashboard", admin_dashboard_path, class: "btn btn-primary" %>
+    <div class="decorative-divider"></div>
+    
+    <div class="auth-section">
+      <% if user_signed_in? %>
+        <p class="user-status">You are signed in as <span class="user-email"><%= current_user.email %></span></p>
+        <div class="button-group">
+          <% if current_user.admin? %>
+            <%= link_to "Admin Dashboard", admin_dashboard_path, class: "btn btn-primary" %>
+          <% else %>
+            <%= link_to "Edit Preferences", edit_preferences_path, class: "btn btn-primary" %>
+          <% end %>
+        </div>
       <% else %>
-        <%= link_to "Edit Preferences", edit_preferences_path, class: "btn btn-primary" %>
+        <p class="auth-message">Please sign in to access your personalized news</p>
+        <div class="button-group">
+          <%= link_to "Sign In", new_user_session_path, class: "btn btn-primary" %>
+          <%= link_to "Sign Up", new_user_registration_path, class: "btn btn-secondary" %>
+        </div>
       <% end %>
-    <% else %>
-      <p>Please sign in to access your personalized news</p>
-      <%= link_to "Sign In", new_user_session_path, class: "btn btn-primary" %>
-      <%= link_to "Sign Up", new_user_registration_path, class: "btn btn-outline-primary ml-2" %>
-    <% end %>
+    </div>
   </div>
   
   <% if flash[:notice] %>
-    <div class="alert alert-success mt-3"><%= flash[:notice] %></div>
+    <div class="alert alert-success"><%= flash[:notice] %></div>
   <% end %>
   
   <% if flash[:alert] %>
-    <div class="alert alert-danger mt-3"><%= flash[:alert] %></div>
+    <div class="alert alert-danger"><%= flash[:alert] %></div>
   <% end %>
 </div>
