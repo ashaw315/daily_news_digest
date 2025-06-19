@@ -183,8 +183,8 @@ RSpec.describe "User Preferences Management", type: :feature do
 
     it "can access preferences from navigation menu" do
       visit root_path
-      expect(page).to have_link("Manage Preferences")
-      click_link "Manage Preferences"
+      expect(page).to have_link("Edit Preferences")
+      click_link "Edit Preferences"
       expect(page).to have_current_path(edit_preferences_path)
     end
   end
