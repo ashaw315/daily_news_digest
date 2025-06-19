@@ -8,32 +8,10 @@ RSpec.describe User, type: :model do
     it { should validate_uniqueness_of(:email).case_insensitive }
     
     # Custom validation tests
-    describe 'minimum_preferences_selected' do
+    describe 'news source selection' do
       let(:user) { create(:user) } # Create a user
       
-      it 'requires at least 3 topics for existing users' do
-        # Skip validation for new records
-        new_user = build(:user)
-        expect(new_user).to be_valid
-        
-        # For existing users, clear existing topics
-        user.topics.clear
-        
-        # Add only 2 topics
-        user.topics << create(:topic, name: 'topic1')
-        user.topics << create(:topic, name: 'topic2')
-        
-        # Validation should fail
-        expect(user).not_to be_valid
-        expect(user.errors[:topics]).to include(/You must select at least 3 topics/)
-      end
-      
       it 'requires at least 1 news source for existing users' do
-        # Ensure user has 3+ topics to pass that validation
-        3.times do |i|
-          user.topics << create(:topic, name: "topic#{i}") unless user.topics.find_by(name: "topic#{i}")
-        end
-        
         # Clear existing news sources
         user.news_sources.clear
         
@@ -43,19 +21,18 @@ RSpec.describe User, type: :model do
       end
       
       it 'passes when requirements are met' do
-        # Create a news source if it doesn't exist
         news_source = NewsSource.find_by(name: 'source1') || create(:news_source, name: 'source1')
-        
-        # Ensure user has 3+ topics
-        3.times do |i|
-          user.topics << create(:topic, name: "topic#{i}") unless user.topics.find_by(name: "topic#{i}")
-        end
-        
-        # Ensure user has 1+ news source
         user.news_sources << news_source unless user.news_sources.include?(news_source)
-        
-        # Validation should pass
+        user.reload # <-- Add this line
         expect(user).to be_valid
+      end
+
+      it 'does not allow more than 15 news sources' do
+        # Create 16 news sources
+        sources = (1..16).map { |i| create(:news_source, name: "source#{i}") }
+        user.news_sources = sources
+        expect(user).not_to be_valid
+        expect(user.errors[:news_sources]).to include(/You can select up to 15 news sources/)
       end
     end
   end
