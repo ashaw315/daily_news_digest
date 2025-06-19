@@ -1,72 +1,84 @@
 <div data-controller="delete-user">
-  <div class="container mt-4">
-    <h1>Users</h1>
+  <h1 class="page-title">Users</h1>
 
-    <div class="card">
-      <div class="card-body">
-        <table class="table">
-          <thead>
+  <div class="admin-card">
+    <div class="admin-card-title">User List</div>
+    <div class="admin-table-container">
+      <table class="admin-table">
+        <thead>
+          <tr>
+            <th>Email</th>
+            <th>Subscribed</th>
+            <th>Admin</th>
+            <th>Topics</th>
+            <th>Sources</th>
+            <th>Created</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% @users.each do |user| %>
             <tr>
-              <th>Email</th>
-              <th>Subscribed</th>
-              <th>Admin</th>
-              <th>Topics</th>
-              <th>Sources</th>
-              <th>Created</th>
-              <th>Actions</th>
+              <td><%= user.email %></td>
+              <td>
+                <% if user.is_subscribed? %>
+                  <span class="status-badge status-active">Yes</span>
+                <% else %>
+                  <span class="status-badge status-inactive">No</span>
+                <% end %>
+              </td>
+              <td>
+                <% if user.admin? %>
+                  <span class="status-badge status-success">Yes</span>
+                <% else %>
+                  <span class="status-badge status-inactive">No</span>
+                <% end %>
+              </td>
+              <td><%= user.topics.count %></td>
+              <td><%= user.news_sources.count %></td>
+              <td><%= user.created_at.strftime('%Y-%m-%d') %></td>
+              <td>
+                <%= link_to 'View', admin_user_path(user), class: 'admin-btn admin-btn-secondary', style: "margin-bottom: 5px;" %>
+                <button type="button" 
+                        class="admin-btn admin-btn-danger"
+                        data-action="click->delete-user#showModal"
+                        data-delete-user-id-param="<%= user.id %>">
+                  Delete
+                </button>
+              </td>
             </tr>
-          </thead>
-          <tbody>
-            <% @users.each do |user| %>
-              <tr>
-                <td><%= user.email %></td>
-                <td><%= user.is_subscribed? ? 'Yes' : 'No' %></td>
-                <td><%= user.admin? ? 'Yes' : 'No' %></td>
-                <td><%= user.topics.count %></td>
-                <td><%= user.news_sources.count %></td>
-                <td><%= user.created_at.strftime('%Y-%m-%d') %></td>
-                <td>
-                  <%= link_to 'View', admin_user_path(user), class: 'btn btn-sm btn-info' %>
-                  <button type="button" 
-                          class="btn btn-sm btn-danger mt-1"
-                          data-action="click->delete-user#showModal"
-                          data-delete-user-id-param="<%= user.id %>">
-                    Delete
-                  </button>
-                </td>
-              </tr>
-            <% end %>
-          </tbody>
-        </table>
+          <% end %>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <div id="delete-modal" 
+       class="admin-modal" 
+       style="display: none;"
+       data-delete-user-target="modal">
+    <div class="admin-modal-content">
+      <h3 class="admin-modal-title">Delete User</h3>
+      <div class="admin-modal-divider"></div>
+      <p class="admin-modal-text">Are you sure? This cannot be undone.</p>
+      <div class="admin-modal-actions">
+        <%= form_with(
+              url: admin_user_path(':user_id'), 
+              method: :delete,
+              local: true,
+              data: { 
+                delete_user_target: "form"
+              }
+            ) do |form| %>
+          <%= form.hidden_field :authenticity_token, value: form_authenticity_token %>
+          <%= form.submit "Yes, Delete", class: "admin-btn admin-btn-danger" %>
+        <% end %>
+        <button type="button" 
+                class="admin-btn admin-btn-secondary" 
+                data-action="delete-user#hideModal">
+          Cancel
+        </button>
       </div>
     </div>
   </div>
-
-<div id="delete-modal" 
-     class="modal" 
-     style="display: none;"
-     data-delete-user-target="modal">
-  <div class="modal-content">
-    <h3>Delete User</h3>
-    <p>Are you sure? This cannot be undone.</p>
-    <div class="modal-actions">
-      <%= form_with(
-            url: admin_user_path(':user_id'), 
-            method: :delete,
-            local: true,
-            data: { 
-              delete_user_target: "form"
-            }
-          ) do |form| %>
-        <%= form.hidden_field :authenticity_token, value: form_authenticity_token %>
-        <%= form.submit "Yes, Delete", class: "button danger" %>
-      <% end %>
-      <button type="button" 
-              class="button secondary" 
-              data-action="delete-user#hideModal">
-        Cancel
-      </button>
-    </div>
-  </div>
-</div>
 </div>

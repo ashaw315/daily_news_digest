@@ -1,62 +1,62 @@
-<h1>Email Metrics</h1>
+<h1 class="page-title">Email Metrics</h1>
 
-<div class="card mb-4">
-  <div class="card-header">
-    <h3>Summary</h3>
-  </div>
-  <div class="card-body">
-    <div class="row">
-      <div class="col-md-3">
-        <div class="metric-card">
-          <h4>Sent</h4>
-          <div class="metric-value"><%= @summary[:sent] %></div>
-        </div>
-      </div>
-      <div class="col-md-3">
-        <div class="metric-card">
-          <h4>Opened</h4>
-          <div class="metric-value"><%= @summary[:opened] %></div>
-          <div class="metric-rate"><%= (@summary[:opened].to_f / @summary[:sent] * 100).round(1) %>% open rate</div>
-        </div>
-      </div>
-      <div class="col-md-3">
-        <div class="metric-card">
-          <h4>Clicked</h4>
-          <div class="metric-value"><%= @summary[:clicked] %></div>
-          <div class="metric-rate"><%= (@summary[:clicked].to_f / @summary[:opened] * 100).round(1) %>% click rate</div>
-        </div>
-      </div>
-      <div class="col-md-3">
-        <div class="metric-card">
-          <h4>Failed</h4>
-          <div class="metric-value"><%= @summary[:failed] %></div>
-          <div class="metric-rate"><%= (@summary[:failed].to_f / @summary[:sent] * 100).round(1) %>% failure rate</div>
-        </div>
-      </div>
+<div class="admin-card">
+  <div class="admin-card-title">Summary</div>
+  <div class="metrics-summary">
+    <div class="metric-item">
+      <span class="metric-value"><%= @summary[:sent] %></span>
+      <span class="metric-label">Sent</span>
+    </div>
+    <div class="metric-item">
+      <span class="metric-value"><%= @summary[:opened] %></span>
+      <span class="metric-label">Opened</span>
+      <span class="metric-rate"><%= (@summary[:sent].to_i > 0 ? (@summary[:opened].to_f / @summary[:sent] * 100).round(1) : 0) %>% open rate</span>
+    </div>
+    <div class="metric-item">
+      <span class="metric-value"><%= @summary[:clicked] %></span>
+      <span class="metric-label">Clicked</span>
+      <span class="metric-rate"><%= (@summary[:opened].to_i > 0 ? (@summary[:clicked].to_f / @summary[:opened] * 100).round(1) : 0) %>% click rate</span>
+    </div>
+    <div class="metric-item">
+      <span class="metric-value"><%= @summary[:failed] %></span>
+      <span class="metric-label">Failed</span>
+      <span class="metric-rate"><%= (@summary[:sent].to_i > 0 ? (@summary[:failed].to_f / @summary[:sent] * 100).round(1) : 0) %>% failure rate</span>
     </div>
   </div>
 </div>
 
-<h2>Recent Email Activity</h2>
-<table class="table">
-  <thead>
-    <tr>
-      <th>User</th>
-      <th>Email Type</th>
-      <th>Subject</th>
-      <th>Status</th>
-      <th>Sent At</th>
-    </tr>
-  </thead>
-  <tbody>
-    <% @email_metrics.each do |metric| %>
-      <tr>
-        <td><%= metric.user.email %></td>
-        <td><%= metric.email_type %></td>
-        <td><%= metric.subject %></td>
-        <td><span class="badge badge-<%= metric.status == 'failed' ? 'danger' : (metric.status == 'sent' ? 'info' : 'success') %>"><%= metric.status %></span></td>
-        <td><%= metric.sent_at&.strftime('%B %d, %Y %H:%M') || metric.created_at.strftime('%B %d, %Y %H:%M') %></td>
-      </tr>
-    <% end %>
-  </tbody>
-</table> 
+<div class="admin-card">
+  <div class="admin-card-title">Recent Email Activity</div>
+  <div class="admin-table-container">
+    <table class="admin-table">
+      <thead>
+        <tr>
+          <th>User</th>
+          <th>Email Type</th>
+          <th>Subject</th>
+          <th>Status</th>
+          <th>Sent At</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% @email_metrics.each do |metric| %>
+          <tr>
+            <td><%= metric.user.email %></td>
+            <td><%= metric.email_type %></td>
+            <td><%= metric.subject %></td>
+            <td>
+              <% badge_class =
+                  case metric.status
+                  when 'failed' then 'status-badge status-error'
+                  when 'sent' then 'status-badge status-active'
+                  else 'status-badge status-success'
+                  end %>
+              <span class="<%= badge_class %>"><%= metric.status.capitalize %></span>
+            </td>
+            <td><%= metric.sent_at&.strftime('%B %d, %Y %H:%M') || metric.created_at.strftime('%B %d, %Y %H:%M') %></td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+  </div>
+</div>

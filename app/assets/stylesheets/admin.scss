@@ -713,3 +713,125 @@
     width: 95%;
   }
 }
+
+// User Details Card
+.user-details-card {
+  background: #fff;
+  border: 1px solid #e2e2e2;
+  border-radius: 6px;
+  padding: 32px 40px 24px 40px;
+  margin-bottom: 32px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.03);
+
+  .user-details-flex {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 40px;
+    margin-bottom: 10px;
+  }
+
+  .user-details-col {
+    flex: 1;
+    min-width: 250px;
+  }
+
+  .user-details-label {
+    font-weight: bold;
+    color: #333;
+    margin-right: 6px;
+  }
+
+  .user-details-value {
+    color: #222;
+  }
+
+  .user-details-meta {
+    color: #888;
+    font-size: 0.97em;
+    margin-top: 2px;
+  }
+
+  .user-details-actions {
+    margin-top: 24px;
+  }
+}
+
+@media (max-width: 700px) {
+  .user-details-card {
+    padding: 18px 10px 14px 10px;
+    .user-details-flex {
+      gap: 18px;
+    }
+    .user-details-col {
+      min-width: 180px;
+    }
+  }
+}
+
+.checkbox-field {
+  margin-bottom: 8px;
+  font-size: 15px;
+}
+
+.topic-group {
+  margin-bottom: 24px;
+}
+
+.topic-heading {
+  font-family: 'Playfair Display', Georgia, serif;
+  font-size: 1.15em;
+  font-weight: bold;
+  margin-bottom: 10px;
+  color: #222;
+}
+
+.helper-text {
+  color: #555;
+  font-size: 15px;
+  margin-bottom: 10px;
+}
+
+.sources-checkbox-list {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.topic-group {
+  margin-bottom: 18px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid #eee;
+}
+.topic-heading {
+  font-family: 'Playfair Display', Georgia, serif;
+  font-size: 1.1em;
+  font-weight: bold;
+  margin-bottom: 6px;
+  color: #222;
+}
+
+.admin-modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0,0,0,0.35); // Optional: dim background
+}
+
+.admin-modal-content {
+  background-color: #fff;
+  max-width: 500px;
+  width: 90%;
+  padding: 30px;
+  border-radius: 8px;
+  box-shadow: 0 10px 25px rgba(0,0,0,0.15);
+  z-index: 1001;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+}

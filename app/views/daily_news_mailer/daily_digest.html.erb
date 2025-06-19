@@ -68,37 +68,6 @@
     <p>Here's your personalized news digest based on your selected news sources.</p>
   </div>
   
-  <div class="section">
-    <div class="section-title">News of the Day Brief</div>
-    <ul>
-      <% if defined?(@news_brief) && @news_brief.present? %>
-        <% @news_brief.each do |article| %>
-          <li><%= article.title %> - <%= article.source %></li>
-        <% end %>
-      <% else %>
-        <li>No news brief available today.</li>
-      <% end %>
-    </ul>
-  </div>
-  
-  <div class="section">
-    <div class="section-title">Top 10 Articles of the Day</div>
-    <% if defined?(@top_articles) && @top_articles.present? %>
-      <% @top_articles.each do |article| %>
-        <div class="article">
-          <div class="article-title"><%= article.title %></div>
-          <div class="article-summary"><%= truncate(article.description, length: 100) %></div>
-          <div class="article-meta">
-            <%= article.source %> | <%= article.published_at.strftime('%b %d, %Y') %>
-          </div>
-          <a href="<%= article.url %>" class="read-more">Read More</a>
-        </div>
-      <% end %>
-    <% else %>
-      <div>No top articles available today.</div>
-    <% end %>
-  </div>
-  
   <% if defined?(@sorted_topics) && @sorted_topics.present? %>
     <% @sorted_topics.each do |topic| %>
       <div class="section">
@@ -106,7 +75,7 @@
           <span class="topic-icon"><%= topic_icon(topic) %></span>
           <%= topic.capitalize %> News
         </div>
-        <% @articles_by_topic[topic].first(5).each do |article| %>
+        <% @articles_by_topic[topic].each do |article| %>
           <div class="article">
             <div class="article-title"><%= article.title %></div>
             <div class="article-summary"><%= truncate(article.description, length: 100) %></div>

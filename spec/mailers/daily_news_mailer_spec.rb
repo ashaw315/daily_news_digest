@@ -43,24 +43,23 @@ RSpec.describe DailyNewsMailer, type: :mailer do
       expect(mail.body.encoded).to include('Hello Adam!')
     end
 
-    it "includes the News of the Day Brief section" do
-      expect(mail.body.encoded).to include('News of the Day Brief')
-    end
-
-    it "includes the Top 10 Articles section" do
-      expect(mail.body.encoded).to include('Top 10 Articles of the Day')
-      expect(mail.body.encoded).to include('Tech News 1')
-      expect(mail.body.encoded).to include('Sports News 1')
-    end
-
     it "includes articles grouped by topic" do
       expect(mail.body.encoded).to include('Technology News')
       expect(mail.body.encoded).to include('Sports News')
+      expect(mail.body.encoded).to include('Tech News 1')
+      expect(mail.body.encoded).to include('Sports News 1')
+      expect(mail.body.encoded).to include('Description for tech news 1')
+      expect(mail.body.encoded).to include('Description for sports news 1')
     end
 
     it "includes a footer with unsubscribe and preferences links" do
       expect(mail.body.encoded).to include('Manage Preferences')
       expect(mail.body.encoded).to include('Unsubscribe')
+    end
+
+    it "does not include the News of the Day Brief or Top 10 Articles sections" do
+      expect(mail.body.encoded).not_to include('News of the Day Brief')
+      expect(mail.body.encoded).not_to include('Top 10 Articles of the Day')
     end
   end
 end

@@ -1,13 +1,14 @@
-<div data-controller="preferences">
-  <div class="preferences-form">
-    <h1>Manage Your Preferences</h1>
+<div class="admin-main">
+  <h1 class="page-title">Manage Your Preferences</h1>
 
-    <% if flash[:alert].present? %>
-      <div class="alert alert-danger">
-        <%= flash[:alert] %>
-      </div>
-    <% end %>
+  <% if flash[:alert].present? %>
+    <div class="alert alert-danger">
+      <%= flash[:alert] %>
+    </div>
+  <% end %>
 
+  <div class="admin-card">
+    <div class="admin-card-title">News Sources</div>
     <%= form_with(model: @user, url: preferences_path, method: :patch, local: true) do |f| %>
       <%= hidden_field_tag "user[news_source_ids][]", nil %>
       <% if @user.errors.any? %>
@@ -21,74 +22,65 @@
         </div>
       <% end %>
 
-      <div class="preferences-section">
-        <h2>News Sources</h2>
-        <p class="helper-text">
-          Select up to <strong>15</strong> news sources for your daily digest.
-          <span id="source-count" style="font-weight: bold;">(0/15 selected)</span>
-        </p>
+      <p class="helper-text">
+        Select up to <strong>15</strong> news sources for your daily digest.
+        <span id="source-count" style="font-weight: bold;">(0/15 selected)</span>
+      </p>
 
-        <!-- Topic Filter Bar -->
-        <div class="topic-filter" style="margin-bottom: 1em;">
-          <label style="font-weight: bold;">Filter by topic:</label>
-          <label>
-            <input type="radio" name="topic-filter" value="all" checked>
-            All
-          </label>
-          <% # Build topics from @news_sources if @topics is not provided %>
-          <% topics = defined?(@topics) ? @topics : @news_sources.map { |s| s.topic.is_a?(String) ? s.topic : s.topic&.name }.uniq.compact.sort %>
+      <div class="topic-filter" style="margin-bottom: 1em;">
+        <label for="topic-select" style="font-weight: bold;">Filter by topic:</label>
+        <select id="topic-select" class="admin-form-input" style="width: auto; display: inline-block; margin-left: 10px;">
+          <option value="all">All</option>
+          <% topics = @news_sources.map { |s| s.topic&.name.to_s.presence || "Other" }.uniq.sort %>
           <% topics.each do |topic| %>
-            <label>
-              <input type="radio" name="topic-filter" value="<%= topic.name.parameterize %>">
-              <%= topic.name.titleize %>
-            </label>
+            <option value="<%= topic.parameterize %>"><%= topic.titleize %></option>
           <% end %>
-        </div>
+        </select>
+      </div>
 
-        <div id="sources-list">
-          <% grouped_sources = @news_sources.group_by { |s| s.topic.is_a?(String) ? s.topic : s.topic&.name } %>
-          <% grouped_sources.sort.each do |topic, sources| %>
-            <div class="topic-group" data-topic="<%= topic.present? ? topic.parameterize : 'other' %>">
-              <h3 class="topic-heading"><%= topic.present? ? topic.titleize : "Other" %></h3>
+      <div id="sources-list">
+        <% grouped_sources = @news_sources.group_by { |s| s.topic&.name.to_s.presence || "Other" } %>
+        <% grouped_sources.sort.each do |topic, sources| %>
+          <div class="topic-group" data-topic="<%= topic.parameterize %>">
+            <h3 class="topic-heading"><%= topic.titleize %></h3>
+            <div class="sources-checkbox-list">
               <% sources.sort_by(&:name).each do |source| %>
-                <div class="checkbox-field">
+                <label class="checkbox-field" style="display: block; margin-bottom: 4px;">
                   <%= check_box_tag "user[news_source_ids][]",
                                     source.id,
                                     @user.news_sources.include?(source),
                                     id: "source_#{source.id}",
                                     class: "news-source-checkbox" %>
-                  <%= label_tag "source_#{source.id}", source.name %>
-                </div>
+                  <%= source.name %>
+                </label>
               <% end %>
             </div>
-          <% end %>
+          </div>
+        <% end %>
+      </div>
+
+      <div class="admin-card-title" style="margin-top: 2em;">Delivery Frequency</div>
+      <div class="radio-group">
+        <div class="radio-field">
+          <%= radio_button_tag "user[preferences_attributes][email_frequency]", 
+                              "daily", 
+                              @user.preferences&.email_frequency == "daily",
+                              id: "frequency_daily" %>
+          <%= label_tag "frequency_daily", "Daily" %>
+        </div>
+        <div class="radio-field">
+          <%= radio_button_tag "user[preferences_attributes][email_frequency]", 
+                              "weekly", 
+                              @user.preferences&.email_frequency == "weekly",
+                              id: "frequency_weekly" %>
+          <%= label_tag "frequency_weekly", "Weekly" %>
         </div>
       </div>
 
-      <div class="preferences-section">
-        <h2>Delivery Frequency</h2>
-        <div class="radio-group">
-          <div class="radio-field">
-            <%= radio_button_tag "user[preferences_attributes][email_frequency]", 
-                                "daily", 
-                                @user.preferences&.email_frequency == "daily",
-                                id: "frequency_daily" %>
-            <%= label_tag "frequency_daily", "Daily" %>
-          </div>
-          <div class="radio-field">
-            <%= radio_button_tag "user[preferences_attributes][email_frequency]", 
-                                "weekly", 
-                                @user.preferences&.email_frequency == "weekly",
-                                id: "frequency_weekly" %>
-            <%= label_tag "frequency_weekly", "Weekly" %>
-          </div>
-        </div>
-      </div>
-
-      <div class="form-actions">
-        <%= f.submit "Save Preferences", class: "button primary" %>
+      <div class="form-actions" style="margin-top: 2em;">
+        <%= f.submit "Save Preferences", class: "admin-btn" %>
         <button type="button" 
-                class="reset-form button" 
+                class="admin-btn admin-btn-secondary reset-form" 
                 data-action="click->preferences#showResetModal">
           Reset Preferences
         </button>
@@ -97,18 +89,19 @@
   </div>
 
   <div id="reset-modal" 
-       class="modal" 
+       class="admin-modal" 
        style="display: none;"
        data-preferences-target="modal">
-    <div class="modal-content">
-      <h3>Reset Preferences</h3>
-      <p>Are you sure? This will clear all your preferences.</p>
-      <div class="modal-actions">
+    <div class="admin-modal-content">
+      <h3 class="admin-modal-title">Reset Preferences</h3>
+      <div class="admin-modal-divider"></div>
+      <p class="admin-modal-text">Are you sure? This will clear all your preferences.</p>
+      <div class="admin-modal-actions">
         <%= form_with(url: reset_preferences_path, method: :post, local: true) do |form| %>
-          <%= form.submit "Yes, Reset", class: "button danger" %>
+          <%= form.submit "Yes, Reset", class: "admin-btn admin-btn-danger" %>
         <% end %>
         <button type="button" 
-                class="button secondary" 
+                class="admin-btn admin-btn-secondary" 
                 data-action="preferences#hideResetModal">
           Cancel
         </button>
@@ -134,20 +127,36 @@
     checkboxes.forEach(cb => cb.addEventListener('change', updateCount));
     updateCount();
 
-    // Topic filter logic
-    const topicRadios = document.querySelectorAll('input[name="topic-filter"]');
+    // Topic filter logic (dropdown)
+    const topicSelect = document.getElementById('topic-select');
     const topicGroups = document.querySelectorAll('.topic-group');
-    topicRadios.forEach(radio => {
-      radio.addEventListener('change', function() {
-        const value = this.value;
-        topicGroups.forEach(group => {
-          if (value === "all" || group.getAttribute('data-topic') === value) {
-            group.style.display = "";
-          } else {
-            group.style.display = "none";
-          }
-        });
+    topicSelect.addEventListener('change', function() {
+      const value = this.value;
+      topicGroups.forEach(group => {
+        if (value === "all" || group.getAttribute('data-topic') === value) {
+          group.style.display = "";
+        } else {
+          group.style.display = "none";
+        }
       });
     });
+  });
+  document.addEventListener("turbo:load", function() {
+    var resetBtn = document.querySelector('.reset-form');
+    var modal = document.getElementById('reset-modal');
+    var cancelBtn = modal ? modal.querySelector('.admin-btn-secondary[data-action*="hideResetModal"]') : null;
+
+    if (resetBtn && modal) {
+      resetBtn.addEventListener('click', function() {
+        console.log("Reset button clicked, showing modal");
+        modal.style.display = 'flex'; // <-- Use 'flex' for centering
+      });
+    }
+    if (cancelBtn && modal) {
+      cancelBtn.addEventListener('click', function() {
+        console.log("Cancel button clicked, hiding modal");
+        modal.style.display = 'none';
+      });
+    }
   });
 </script>

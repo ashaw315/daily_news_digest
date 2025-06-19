@@ -4,31 +4,10 @@ Hello <%= @user.name || @user.email.split('@').first %>!
 
 Here's your personalized news digest based on your selected news sources.
 
-NEWS OF THE DAY BRIEF:
-<% if defined?(@news_brief) && @news_brief.present? %>
-<% @news_brief.each do |article| %>
-* <%= article.title %> - <%= article.source %>
-<% end %>
-<% else %>
-(No news brief available today.)
-<% end %>
-
-TOP 10 ARTICLES OF THE DAY:
-<% if defined?(@top_articles) && @top_articles.present? %>
-<% @top_articles.each do |article| %>
-- <%= article.title %>
-  <%= truncate(article.description, length: 100) %>
-  <%= article.source %> | <%= article.published_at.strftime('%b %d, %Y') %>
-  Read more: <%= article.url %>
-<% end %>
-<% else %>
-(No top articles available today.)
-<% end %>
-
 <% if defined?(@sorted_topics) && @sorted_topics.present? %>
 <% @sorted_topics.each do |topic| %>
 <%= topic.upcase %> NEWS:
-<% @articles_by_topic[topic].first(5).each do |article| %>
+<% @articles_by_topic[topic].each do |article| %>
 - <%= article.title %>
   <%= truncate(article.description, length: 100) %>
   <%= article.source %> | <%= article.published_at.strftime('%b %d, %Y') %>
