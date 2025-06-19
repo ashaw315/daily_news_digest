@@ -3,6 +3,7 @@ class NewsSource < ApplicationRecord
   has_many :user_news_sources, dependent: :destroy
   has_many :users, through: :user_news_sources
   has_many :articles, dependent: :destroy
+  belongs_to :topic, optional: true
 
   # Validations
   validates :name, presence: true, uniqueness: true

@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2025_04_15_190133) do
+ActiveRecord::Schema[7.1].define(version: 2025_06_19_164145) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
 
@@ -73,9 +73,11 @@ ActiveRecord::Schema[7.1].define(version: 2025_04_15_190133) do
     t.string "last_fetch_status"
     t.integer "last_fetch_article_count"
     t.text "last_fetch_errors"
+    t.bigint "topic_id"
     t.index ["active"], name: "index_news_sources_on_active"
     t.index ["format"], name: "index_news_sources_on_format"
     t.index ["name"], name: "index_news_sources_on_name", unique: true
+    t.index ["topic_id"], name: "index_news_sources_on_topic_id"
   end
 
   create_table "preferences", force: :cascade do |t|
@@ -142,6 +144,7 @@ ActiveRecord::Schema[7.1].define(version: 2025_04_15_190133) do
   add_foreign_key "articles", "news_sources"
   add_foreign_key "email_metrics", "users"
   add_foreign_key "email_trackings", "users"
+  add_foreign_key "news_sources", "topics"
   add_foreign_key "preferences", "users"
   add_foreign_key "user_news_sources", "news_sources"
   add_foreign_key "user_news_sources", "users"

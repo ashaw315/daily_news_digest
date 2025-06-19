@@ -15,7 +15,8 @@ class User < ApplicationRecord
   has_many :news_sources, through: :user_news_sources
   
   validates :email, presence: true, uniqueness: true
-  validate :minimum_preferences_selected
+  validate :news_source_limit
+  validate :must_have_at_least_one_news_source
   
   before_create :generate_unsubscribe_token
   after_create :create_default_preferences
@@ -37,6 +38,12 @@ class User < ApplicationRecord
 
   def email_frequency
     preferences&.email_frequency || 'daily'
+  end
+
+  def news_source_limit
+    if news_source_ids.size > 15
+      errors.add(:news_sources, "You can select up to 15 news sources")
+    end
   end
 
   def reset_preferences!
@@ -113,21 +120,29 @@ class User < ApplicationRecord
     raise
   end
 
-  def minimum_preferences_selected
-    # Skip validation for new records (during registration)
-    return if new_record?
-    
-    topic_count = topics.size
-    source_count = news_sources.size
-
-     Rails.logger.debug "VALIDATION: User #{id} has #{topic_count} topics and #{source_count} news sources"
-    
-    if topic_count < 3
-      errors.add(:topics, "You must select at least 3 topics (you selected #{topic_count})")
-    end
-    
+  def must_have_at_least_one_news_source
+    return if new_record? # Skip validation on user creation
+    source_count = news_source_ids.reject(&:blank?).size
     if source_count < 1
       errors.add(:news_sources, "You must select at least 1 news source")
     end
   end
+
+  # def minimum_preferences_selected
+  #   # Skip validation for new records (during registration)
+  #   return if new_record?
+    
+  #   topic_count = topics.size
+  #   source_count = news_sources.size
+
+  #    Rails.logger.debug "VALIDATION: User #{id} has #{topic_count} topics and #{source_count} news sources"
+    
+  #   if topic_count < 3
+  #     errors.add(:topics, "You must select at least 3 topics (you selected #{topic_count})")
+  #   end
+    
+  #   if source_count < 1
+  #     errors.add(:news_sources, "You must select at least 1 news source")
+  #   end
+  # end
 end

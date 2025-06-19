@@ -9,7 +9,6 @@
     <% end %>
 
     <%= form_with(model: @user, url: preferences_path, method: :patch, local: true) do |f| %>
-      <%= hidden_field_tag "user[topic_ids][]", nil %>
       <%= hidden_field_tag "user[news_source_ids][]", nil %>
       <% if @user.errors.any? %>
         <div class="error-messages">
@@ -22,33 +21,49 @@
         </div>
       <% end %>
 
-    <div class="preferences-section">
-      <h2>Topics of Interest</h2>
-      <p class="helper-text">Please select at least 3 topics</p>
-      <% @topics.each do |topic| %>
-        <div class="checkbox-field">
-          <%= check_box_tag "user[topic_ids][]",
-                          topic.id,
-                          @user.topics.include?(topic),
-                          id: "topic_#{topic.name.downcase.gsub(' ', '_')}" %>
-          <%= label_tag "topic_#{topic.name.downcase.gsub(' ', '_')}", topic.name %>
-        </div>
-      <% end %>
-    </div>
+      <div class="preferences-section">
+        <h2>News Sources</h2>
+        <p class="helper-text">
+          Select up to <strong>15</strong> news sources for your daily digest.
+          <span id="source-count" style="font-weight: bold;">(0/15 selected)</span>
+        </p>
 
-    <div class="preferences-section">
-      <h2>News Sources</h2>
-      <p class="helper-text">Please select at least 1 news source</p>
-      <% @news_sources.each do |source| %>
-        <div class="checkbox-field">
-          <%= check_box_tag "user[news_source_ids][]",
-                          source.id,
-                          @user.news_sources.include?(source),
-                          id: "source_#{source.name.downcase.gsub(' ', '_')}" %>
-          <%= label_tag "source_#{source.name.downcase.gsub(' ', '_')}", source.name %>
+        <!-- Topic Filter Bar -->
+        <div class="topic-filter" style="margin-bottom: 1em;">
+          <label style="font-weight: bold;">Filter by topic:</label>
+          <label>
+            <input type="radio" name="topic-filter" value="all" checked>
+            All
+          </label>
+          <% # Build topics from @news_sources if @topics is not provided %>
+          <% topics = defined?(@topics) ? @topics : @news_sources.map { |s| s.topic.is_a?(String) ? s.topic : s.topic&.name }.uniq.compact.sort %>
+          <% topics.each do |topic| %>
+            <label>
+              <input type="radio" name="topic-filter" value="<%= topic.name.parameterize %>">
+              <%= topic.name.titleize %>
+            </label>
+          <% end %>
         </div>
-      <% end %>
-    </div>
+
+        <div id="sources-list">
+          <% grouped_sources = @news_sources.group_by { |s| s.topic.is_a?(String) ? s.topic : s.topic&.name } %>
+          <% grouped_sources.sort.each do |topic, sources| %>
+            <div class="topic-group" data-topic="<%= topic.present? ? topic.parameterize : 'other' %>">
+              <h3 class="topic-heading"><%= topic.present? ? topic.titleize : "Other" %></h3>
+              <% sources.sort_by(&:name).each do |source| %>
+                <div class="checkbox-field">
+                  <%= check_box_tag "user[news_source_ids][]",
+                                    source.id,
+                                    @user.news_sources.include?(source),
+                                    id: "source_#{source.id}",
+                                    class: "news-source-checkbox" %>
+                  <%= label_tag "source_#{source.id}", source.name %>
+                </div>
+              <% end %>
+            </div>
+          <% end %>
+        </div>
+      </div>
 
       <div class="preferences-section">
         <h2>Delivery Frequency</h2>
@@ -101,3 +116,38 @@
     </div>
   </div>
 </div>
+
+<script>
+  // Limit news source selection to 15 and update counter
+  document.addEventListener("DOMContentLoaded", function() {
+    const checkboxes = document.querySelectorAll('.news-source-checkbox');
+    const countSpan = document.getElementById('source-count');
+    function updateCount() {
+      const checked = Array.from(checkboxes).filter(cb => cb.checked);
+      countSpan.textContent = `(${checked.length}/15 selected)`;
+      if (checked.length >= 15) {
+        checkboxes.forEach(cb => { if (!cb.checked) cb.disabled = true; });
+      } else {
+        checkboxes.forEach(cb => cb.disabled = false);
+      }
+    }
+    checkboxes.forEach(cb => cb.addEventListener('change', updateCount));
+    updateCount();
+
+    // Topic filter logic
+    const topicRadios = document.querySelectorAll('input[name="topic-filter"]');
+    const topicGroups = document.querySelectorAll('.topic-group');
+    topicRadios.forEach(radio => {
+      radio.addEventListener('change', function() {
+        const value = this.value;
+        topicGroups.forEach(group => {
+          if (value === "all" || group.getAttribute('data-topic') === value) {
+            group.style.display = "";
+          } else {
+            group.style.display = "none";
+          }
+        });
+      });
+    });
+  });
+</script>
