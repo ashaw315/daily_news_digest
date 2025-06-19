@@ -9,6 +9,9 @@ require 'capybara/rspec'
 require 'devise'
 require 'database_cleaner/active_record'
 require 'webmock/rspec'
+require 'webdrivers'
+# Webdrivers::Chromedriver.required_version = '137.0.7151.119'
+Selenium::WebDriver::Chrome::Service.driver_path = "/usr/local/bin/chromedriver"
 
 # Enable auto-loading of support files
 Dir[Rails.root.join('spec/support/**/*.rb')].sort.each { |f| require f }

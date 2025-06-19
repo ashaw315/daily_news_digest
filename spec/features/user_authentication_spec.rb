@@ -4,7 +4,7 @@ RSpec.describe 'User authentication', type: :feature do
   let(:user_attributes) { { email: 'test@example.com', password: 'password123', name: 'Name' } }
 
   describe 'sign up' do
-    it 'allows user to sign up with valid credentials' do
+    it 'allows user to sign up with valid credentials', js: true do
       visit new_user_registration_path
       
       # Debug: Print the current page HTML
@@ -58,7 +58,7 @@ RSpec.describe 'User authentication', type: :feature do
       
       fill_in 'Email', with: user_attributes[:email]
       fill_in 'Password', with: user_attributes[:password]
-      click_button 'Log in'
+      click_button 'Sign in'
       
       expect(page).to have_content('Signed in successfully')
     end
@@ -72,7 +72,7 @@ RSpec.describe 'User authentication', type: :feature do
       
       expect {
         fill_in 'Email', with: user_attributes[:email]
-        click_button 'Send me reset password instructions'
+        click_button 'Send Recovery Instructions'
         sleep 1 # Give it a moment to process
       }.to change { ActionMailer::Base.deliveries.count }.by(1)
       
