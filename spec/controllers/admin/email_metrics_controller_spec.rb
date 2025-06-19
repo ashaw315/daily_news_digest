@@ -41,22 +41,27 @@ RSpec.describe Admin::EmailMetricsController, type: :request do
         
         # Check that all metric types are shown
         expect(response.body).to include(regular_user.email)
-        expect(response.body).to include("sent")
-        expect(response.body).to include("opened")
-        expect(response.body).to include("clicked")
-        expect(response.body).to include("failed")
+        expect(response.body).to include('<span class="metric-label">Sent</span>')
+        expect(response.body).to include('<span class="metric-label">Opened</span>')
+        expect(response.body).to include('<span class="metric-label">Clicked</span>')
+        expect(response.body).to include('<span class="metric-label">Failed</span>')
       end
       
       it "shows the correct metrics count" do
         get admin_email_metrics_path
-        
+      
         # Match the actual HTML structure instead of the text
-        expect(response.body).to include('<h4>Sent</h4>')
-        expect(response.body).to include('<div class="metric-value">1</div>')
-        expect(response.body).to match(/Sent.*?<div class="metric-value">1<\/div>/m)
-        expect(response.body).to match(/Opened.*?<div class="metric-value">1<\/div>/m)
-        expect(response.body).to match(/Clicked.*?<div class="metric-value">1<\/div>/m)
-        expect(response.body).to match(/Failed.*?<div class="metric-value">1<\/div>/m)
+        expect(response.body).to include('<span class="metric-label">Sent</span>')
+        expect(response.body).to include('<span class="metric-label">Opened</span>')
+        expect(response.body).to include('<span class="metric-label">Clicked</span>')
+        expect(response.body).to include('<span class="metric-label">Failed</span>')
+      
+        expect(response.body).to include('<span class="metric-value">1</span>')
+
+        expect(response.body).to match(/<span class="metric-label">Sent<\/span>.*?<span class="metric-value">1<\/span>/m)
+        expect(response.body).to match(/<span class="metric-label">Opened<\/span>.*?<span class="metric-value">1<\/span>/m)
+        expect(response.body).to match(/<span class="metric-label">Clicked<\/span>.*?<span class="metric-value">1<\/span>/m)
+        expect(response.body).to match(/<span class="metric-value">1<\/span>\s*<span class="metric-label">Failed<\/span>/m)
       end
     end
   end

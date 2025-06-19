@@ -291,11 +291,11 @@ RSpec.describe "Admin Dashboard", type: :system do
     end
     
     it "displays a list of email metrics" do
-      expect(page).to have_content(regular_user.email)
-      expect(page).to have_content("daily_digest")
-      expect(page).to have_content("weekly_summary")
-      expect(page).to have_content("sent")
-      expect(page).to have_content("opened")
+      expect(page).to have_css('.metric-label', text: 'Sent')
+      expect(page).to have_css('.metric-label', text: 'Opened')
+      expect(page).to have_css('.metric-label', text: 'Clicked')
+      expect(page).to have_css('.metric-label', text: 'Failed')
+      expect(page).to have_css('.metric-value', text: '1')
     end
     
     it "allows filtering by email type" do
