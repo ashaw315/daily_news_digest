@@ -158,7 +158,7 @@ RSpec.describe "Admin Dashboard", type: :system do
           headers: {'Content-Type' => 'application/rss+xml'}
         )
     
-      click_link "New News Source"
+      click_link "Add News Source"
       
       fill_in "Name", with: "Hacker News"
       fill_in "RSS Feed URL", with: "https://hnrss.org/frontpage"
@@ -190,7 +190,7 @@ RSpec.describe "Admin Dashboard", type: :system do
     end
     
     it "prevents creating a news source without validation", js: true do
-      click_link "New News Source"
+      click_link "Add News Source"
       
       fill_in "Name", with: "Invalid Source"
       fill_in "RSS Feed URL", with: valid_rss_feed_url
@@ -263,9 +263,9 @@ RSpec.describe "Admin Dashboard", type: :system do
       
       visit admin_news_sources_path
       
-      # Verify the used news source has its Delete button disabled
+      # Verify the used news source has NO Delete button
       within "tr", text: "Tech Daily" do
-        expect(page).to have_button("Delete", disabled: true)
+        expect(page).not_to have_button("Delete")
       end
       
       # Verify our unused news source has an enabled Delete button
@@ -275,7 +275,7 @@ RSpec.describe "Admin Dashboard", type: :system do
       end
       
       # Confirm deletion in the modal
-      click_button "Yes, Delete"
+      click_button "Delete Source" # This matches your modal's button text
       
       # Verify success message appears
       expect(page).to have_content("News source was successfully destroyed")
