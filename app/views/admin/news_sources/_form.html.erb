@@ -22,6 +22,19 @@
     <div class="helper-text">Enter the full URL to the RSS feed</div>
   </div>
 
+  <!-- TOPIC DROPDOWN + CREATE NEW TOPIC -->
+  <div class="admin-form-group">
+    <%= form.label :topic_id, "Topic", class: 'admin-form-label' %>
+    <%= form.collection_select :topic_id, Topic.order(:name), :id, :name, { prompt: "Select a topic", selected: source.topic_id }, { class: "admin-form-input", id: "news_source_topic_id" } %>
+    <div class="helper-text">Choose a topic for this news source, or create a new one.</div>
+    <div id="new-topic-field" style="display: none; margin-top: 8px;">
+      <input type="text" id="new_topic_name" class="admin-form-input" placeholder="Enter new topic name" />
+      <button type="button" id="create-topic-btn" class="admin-btn admin-btn-secondary" style="margin-top: 6px;">Create Topic</button>
+      <div id="new-topic-error" class="alert alert-danger" style="display:none; margin-top: 6px;"></div>
+    </div>
+  </div>
+  <!-- END TOPIC DROPDOWN -->
+
   <div class="admin-form-group" style="margin-bottom: 18px;">
     <label class="admin-form-label" style="display: flex; align-items: center;">
       <%= form.check_box :active, class: 'admin-form-input', style: "width: auto; margin-right: 8px;" %>
@@ -49,30 +62,104 @@
   const validateBtn = document.getElementById('validate-source');
   const resultDiv = document.getElementById('validation-result');
   const validatedField = document.getElementById('source-validated');
-  
+  const topicSelect = document.getElementById('news_source_topic_id');
+  const newTopicField = document.getElementById('new-topic-field');
+  const newTopicInput = document.getElementById('new_topic_name');
+  const createTopicBtn = document.getElementById('create-topic-btn');
+  const newTopicError = document.getElementById('new-topic-error');
+
+  // Add "Create new topic..." option if not present
+  if (topicSelect && !Array.from(topicSelect.options).some(opt => opt.value === "create_new")) {
+    const option = document.createElement("option");
+    option.value = "create_new";
+    option.text = "Create new topic...";
+    topicSelect.appendChild(option);
+  }
+
+  // Show/hide new topic field based on selection
+  if (topicSelect) {
+    topicSelect.addEventListener('change', function() {
+      if (this.value === "create_new") {
+        newTopicField.style.display = "block";
+      } else {
+        newTopicField.style.display = "none";
+        newTopicError.style.display = "none";
+      }
+    });
+  }
+
+  // Handle create topic button click
+  if (createTopicBtn) {
+    createTopicBtn.addEventListener('click', function() {
+      const topicName = newTopicInput.value.trim();
+      if (!topicName) {
+        newTopicError.textContent = "Please enter a topic name.";
+        newTopicError.style.display = "block";
+        return;
+      }
+      newTopicError.style.display = "none";
+      createTopicBtn.disabled = true;
+      createTopicBtn.textContent = "Creating...";
+
+      fetch("<%= admin_topics_path %>", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "X-CSRF-Token": document.querySelector('meta[name="csrf-token"]').content,
+          "Accept": "application/json"
+        },
+        body: JSON.stringify({ topic: { name: topicName } })
+      })
+      .then(response => response.json())
+      .then(data => {
+        if (data.id) {
+          // Add new topic to dropdown and select it
+          const newOption = document.createElement("option");
+          newOption.value = data.id;
+          newOption.text = data.name;
+          topicSelect.appendChild(newOption);
+          topicSelect.value = data.id;
+          newTopicField.style.display = "none";
+          newTopicInput.value = "";
+        } else if (data.errors) {
+          newTopicError.textContent = data.errors.join(", ");
+          newTopicError.style.display = "block";
+        }
+      })
+      .catch(error => {
+        newTopicError.textContent = "Error creating topic: " + error.message;
+        newTopicError.style.display = "block";
+      })
+      .finally(() => {
+        createTopicBtn.disabled = false;
+        createTopicBtn.textContent = "Create Topic";
+      });
+    });
+  }
+
   // Disable submit button initially for new sources
   if (!<%= source.persisted?.to_json %>) {
     document.querySelector('input[type="submit"]').disabled = true;
   }
-  
+
   // Reset validation when URL changes
   document.querySelector('input[name="news_source[url]"]').addEventListener('change', function() {
     validatedField.value = "false";
     document.querySelector('input[type="submit"]').disabled = true;
     resultDiv.innerHTML = '';
   });
-  
+
   // Validate RSS feed
   validateBtn.addEventListener('click', function() {
     resultDiv.innerHTML = '<span class="spinner-border text-primary" role="status" style="display:inline-block;width:1.5em;height:1.5em;border:0.2em solid #3498db;border-right-color:transparent;border-radius:50%;animation:spin 0.75s linear infinite;"></span>';
-    
+
     const form = validateBtn.closest('form');
     const formData = new FormData(form);
     const sourceId = <%= source.id.to_json %>;
-    
+
     let url = '';
     let method = 'POST';
-    
+
     if (sourceId) {
       // Existing source
       url = '<%= admin_news_source_path(source) if source.persisted? %>/validate';
@@ -80,7 +167,7 @@
       // New source
       url = '<%= validate_new_admin_news_sources_path %>';
     }
-    
+
     fetch(url, {
       method: method,
       body: formData,
