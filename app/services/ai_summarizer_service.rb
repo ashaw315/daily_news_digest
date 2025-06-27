@@ -11,6 +11,8 @@ class AiSummarizerService
   def initialize
     @errors = []
     @last_api_call = Time.now - 60  # Initialize to avoid immediate rate limiting
+    @request_count = 0
+    @rate_limited_until = nil
     configure_client
   end
 
@@ -18,6 +20,13 @@ class AiSummarizerService
     return nil if content.blank?
     
     puts "\n=== AI Summary Generation ==="
+    display_rate_limit_status
+    
+    if rate_limited?
+      puts "Currently rate limited. Please wait."
+      return fallback_summary(content, word_count)
+    end
+
     puts "Content length: #{content.length} chars"
     
     # Don't summarize if content is too short
@@ -43,6 +52,7 @@ class AiSummarizerService
         }
       )
       
+      increment_request_count
       @last_api_call = Time.now
       summary = response.dig("choices", 0, "message", "content")
       
@@ -55,12 +65,11 @@ class AiSummarizerService
       end
 
     rescue OpenAI::Error => e
-      if e.message.include?('429') # Rate limit error
-        puts "Rate limit hit, waiting #{RATE_LIMIT_DELAY} seconds..."
+      handle_api_error(e)
+      if e.message.include?('429')
+        mark_rate_limited
         sleep(RATE_LIMIT_DELAY)
         retry if (retries += 1) < MAX_RETRIES
-      else
-        handle_api_error(e)
       end
     rescue => e
       handle_api_error(e)
@@ -69,6 +78,15 @@ class AiSummarizerService
 
     puts "All retries failed, using fallback"
     fallback_summary(content, word_count)
+  end
+
+  def check_rate_limit_status
+    {
+      requests_today: @request_count,
+      rate_limited: rate_limited?,
+      rate_limit_expires: @rate_limited_until,
+      requests_remaining: 200 - @request_count # Assuming 200/day limit
+    }
   end
 
   private
@@ -113,10 +131,62 @@ class AiSummarizerService
     end
   end
 
+  def display_rate_limit_status
+    status = check_rate_limit_status
+    puts "\nRate Limit Status:"
+    puts "- Requests made today: #{status[:requests_today]}"
+    puts "- Requests remaining: #{status[:requests_remaining]}"
+    puts "- Rate limited: #{status[:rate_limited]}"
+    if status[:rate_limited]
+      puts "- Rate limit expires: #{status[:rate_limit_expires]}"
+    end
+    puts
+  end
+
+  def increment_request_count
+    @request_count += 1
+  end
+
+  def mark_rate_limited
+    @rate_limited_until = Time.now + 24.hours
+  end
+
+  def rate_limited?
+    return false if @rate_limited_until.nil?
+    Time.now < @rate_limited_until
+  end
+
   def handle_api_error(error)
-    error_msg = "AI summarization error: #{error.message}"
-    puts "ERROR: #{error_msg}"
-    @errors << error_msg
+    case error.message
+    when /429/
+      rate_limit_info = <<~INFO
+        \nRATE LIMIT HIT: You've reached OpenAI's rate limit.
+        Current Status:
+        - Requests today: #{@request_count}
+        - Rate limited until: #{@rate_limited_until}
+        
+        Limits:
+        - Per minute: 3 requests
+        - Per day: ~200 requests
+        
+        Try again:
+        - After 20 seconds for per-minute limits
+        - Tomorrow for daily limits
+      INFO
+      puts rate_limit_info
+      @errors << "Rate limit exceeded"
+    when /401/
+      puts "AUTHENTICATION ERROR: Invalid API key or token expired"
+      @errors << "Authentication failed"
+    when /503/
+      puts "SERVICE ERROR: OpenAI API is temporarily unavailable"
+      @errors << "Service unavailable"
+    else
+      puts "AI summarization error: #{error.message}"
+      puts "Error type: #{error.class}"
+      puts "Full error details: #{error.inspect}"
+      @errors << "General error: #{error.message}"
+    end
   end
 
   def fallback_summary(content, word_count)
