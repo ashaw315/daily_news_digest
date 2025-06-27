@@ -23,14 +23,15 @@ class EnhancedNewsFetcher
         puts "Fetching from: #{source.name}"
         feed = fetch_feed(source.url)
         
-        source_articles = feed.entries.map do |entry|
+        # Get the most recent entries first
+        recent_entries = feed.entries
+          .sort_by { |entry| entry.published || Time.current }
+          .reverse
+          .first(ARTICLES_PER_SOURCE)  # Only take 3 most recent
+        
+        source_articles = recent_entries.map do |entry|
           fetch_from_rss_and_summarize(entry, source.name)
         end.compact
-        
-        source_articles = source_articles
-          .sort_by { |a| a[:publish_date] }
-          .reverse
-          .take(ARTICLES_PER_SOURCE)
         
         puts "  - Got #{source_articles.length} articles from #{source.name}"
         puts "  - Article titles:"
@@ -213,15 +214,18 @@ class EnhancedNewsFetcher
         next
       end
 
-      Article.create!(
-        title: article_data[:title],
-        summary: article_data[:summary],  # Fixed: was using :description instead of :summary
-        url: article_data[:url],
-        publish_date: article_data[:publish_date],
-        news_source_id: article_data[:news_source_id],
-        source: article_data[:source],
-        topic: article_data[:topic]
-      )
+    news_source = NewsSource.find(article_data[:news_source_id])
+    topic_name = news_source.topic&.name # Assuming Topic model has a 'name' field
+    
+    Article.create!(
+      title: article_data[:title],
+      summary: article_data[:summary],
+      url: article_data[:url],
+      publish_date: article_data[:publish_date],
+      news_source_id: article_data[:news_source_id],
+      source: article_data[:source],
+      topic: topic_name  # Use the associated Topic's name
+    )
       puts "  - Saved new article: #{article_data[:title]}"
       new_articles += 1
     end

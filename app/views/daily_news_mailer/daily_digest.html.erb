@@ -68,21 +68,22 @@
     <p>Here's your personalized news digest based on your selected news sources.</p>
   </div>
   
-  <% if @sorted_topics.present? && @articles_by_topic.present? %>
+  <% if @articles_by_topic.present? %>
     <% articles_found = false %>
-    <% @sorted_topics.each do |topic| %>
-      <% if @articles_by_topic[topic].present? %>
+    <% @articles_by_topic.each do |topic_name, articles| %>
+      <% if articles.present? %>
         <% articles_found = true %>
         <div class="section">
           <div class="section-title">
-            <span class="topic-icon"><%= topic_icon(topic) %></span>
-            <%= topic.capitalize %> News
+            <span class="topic-icon"><%= topic_icon(topic_name) %></span>
+            <%= topic_name.capitalize %> News
           </div>
-          <% @articles_by_topic[topic].each do |article| %>
+          
+          <% articles.each do |article| %>
             <div class="article">
               <div class="article-title"><%= article.title %></div>
               <div class="article-summary">
-                <% puts "Summary for #{article.title}: #{article.description&.length || 0} characters" %>
+                <% puts "Summary for #{article.title}: #{article.summary&.length || 0} characters" %>
                 <%= article_summary(article) %>
               </div>
               <div class="article-meta">
@@ -94,6 +95,7 @@
         </div>
       <% end %>
     <% end %>
+    
     <% unless articles_found %>
       <div class="section">
         <p>No articles found for your selected sources.</p>
