@@ -23,11 +23,11 @@ class EnhancedNewsFetcher
         puts "Fetching from: #{source.name}"
         feed = fetch_feed(source.url)
         
-        # Get the most recent entries first
+        # Get only the 3 most recent entries
         recent_entries = feed.entries
           .sort_by { |entry| entry.published || Time.current }
           .reverse
-          .first(ARTICLES_PER_SOURCE)  # Only take 3 most recent
+          .first(ARTICLES_PER_SOURCE)
         
         source_articles = recent_entries.map do |entry|
           fetch_from_rss_and_summarize(entry, source.name)
@@ -50,7 +50,7 @@ class EnhancedNewsFetcher
         update_source_stats(source, 'error', 0)
       end
     end
-
+  
     puts "\n=== Article Fetch Summary ==="
     @sources.each do |source|
       count = all_articles.count { |a| a[:news_source_id] == source.id }
@@ -73,37 +73,6 @@ class EnhancedNewsFetcher
     raise
   end
 
-  def fetch_full_content_with_readability(url)
-    headers = {
-      "User-Agent" => USER_AGENT,
-      "Accept" => "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
-      "Accept-Language" => "en-US,en;q=0.5",
-      "Accept-Encoding" => "gzip, deflate, br",
-      "Connection" => "keep-alive",
-      "Upgrade-Insecure-Requests" => "1",
-      "Cache-Control" => "no-cache"
-    }
-    
-    html = URI.open(url, headers).read.force_encoding('UTF-8')
-    return "" unless html.valid_encoding?
-
-    doc = Nokogiri::HTML(html)
-    article = Readability::Document.new(
-      doc.to_html,
-      tags: %w[p img a h1 h2 h3 h4 h5 h6],
-      attributes: %w[href src alt],
-      remove_empty_nodes: true,
-      min_text_length: 25
-    ).content
-    
-    content = Nokogiri::HTML(article).text.strip
-    puts "    * Full content length: #{content.length} characters"
-    content
-  rescue => e
-    puts "  - Readability failed for #{url}: #{e.message}"
-    ""
-  end
-
   def fetch_from_rss_and_summarize(entry, source_name)
     title = entry.title.strip
     url = entry.url || entry.link
@@ -119,14 +88,16 @@ class EnhancedNewsFetcher
     content_source = "Article page"
   
     # Fallback to RSS content if article fetch fails
-    if content.blank? || content.length < MIN_CONTENT_LENGTH
-      content = if entry.content.present?
-        strip_html(entry.content)
-      elsif entry.summary.present?
-        strip_html(entry.summary)
-      elsif entry.description.present?
-        strip_html(entry.description)
-      end
+    if content.blank?
+      # Try all possible RSS content fields
+      content = [
+        entry.try(:content),
+        entry.try(:summary),
+        entry.try(:description),
+        entry.try(:title)  # Use title as last resort
+      ].find { |c| c.present? }
+      
+      content = strip_html(content.to_s)
       content_source = "RSS feed"
     end
   
@@ -137,18 +108,18 @@ class EnhancedNewsFetcher
     puts "Content length: #{content.length} chars"
     puts "Content preview: #{content[0..200]}..." if content.present?
   
-    # Generate AI summary if we have enough content
-    summary = if content.length > MIN_CONTENT_LENGTH
+    # Always generate summary, even for short content
+    summary = if content.present?
       puts "Generating AI summary from #{content.length} chars..."
       @summarizer.generate_summary(content)
     else
-      puts "Content too short (#{content.length} chars), using as is"
-      content
+      puts "No content available, using title"
+      title
     end
   
     {
       title: title,
-      summary: summary,
+      summary: summary || content || title, # Multiple fallbacks
       url: url,
       publish_date: publish_date,
       source: source_name,
@@ -214,18 +185,18 @@ class EnhancedNewsFetcher
         next
       end
 
-    news_source = NewsSource.find(article_data[:news_source_id])
-    topic_name = news_source.topic&.name # Assuming Topic model has a 'name' field
-    
-    Article.create!(
-      title: article_data[:title],
-      summary: article_data[:summary],
-      url: article_data[:url],
-      publish_date: article_data[:publish_date],
-      news_source_id: article_data[:news_source_id],
-      source: article_data[:source],
-      topic: topic_name  # Use the associated Topic's name
-    )
+      news_source = NewsSource.find(article_data[:news_source_id])
+      topic_name = news_source.topic&.name # Assuming Topic model has a 'name' field
+      
+      Article.create!(
+        title: article_data[:title],
+        summary: article_data[:summary],
+        url: article_data[:url],
+        publish_date: article_data[:publish_date],
+        news_source_id: article_data[:news_source_id],
+        source: article_data[:source],
+        topic: topic_name  # Use the associated Topic's name
+      )
       puts "  - Saved new article: #{article_data[:title]}"
       new_articles += 1
     end
