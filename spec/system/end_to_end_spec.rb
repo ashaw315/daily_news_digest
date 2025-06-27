@@ -95,7 +95,6 @@ RSpec.describe "End-to-End Integration", type: :system do
     stub_request(:get, "https://hnrss.org/frontpage")
       .to_return(status: 200, body: sample_rss_content, headers: {'Content-Type' => 'application/rss+xml'})
     
-    # Mock NewsFetcher to return our test articles
     allow_any_instance_of(EnhancedNewsFetcher).to receive(:fetch_articles).and_return(@articles)
   end
   
