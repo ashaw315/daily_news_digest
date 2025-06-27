@@ -1,0 +1,30 @@
+services:
+  - type: web
+    name: daily-news-digest
+    env: ruby
+    buildCommand: bundle install
+    startCommand: bundle exec puma -C config/puma.rb
+    envVars:
+      - key: RAILS_MASTER_KEY
+        sync: false
+      - key: OPENAI_API_KEY
+        sync: false
+      - key: RAILS_ENV
+        value: production
+  - type: redis
+    name: redis
+    ipAllowList: []
+  - type: worker
+    name: sidekiq
+    env: ruby
+    buildCommand: bundle install
+    startCommand: bundle exec sidekiq
+    envVars:
+      - key: REDIS_URL
+        fromService:
+          type: redis
+          name: redis
+          property: connectionString
+databases:
+  - name: postgres
+    ipAllowList: []
