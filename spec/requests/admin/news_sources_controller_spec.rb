@@ -228,20 +228,25 @@ RSpec.describe Admin::NewsSourcesController, type: :request do
       before { 
         sign_in admin_user
         
+        # Mock AiSummarizerService
+        mock_summarizer = double("AiSummarizerService")
+        allow(mock_summarizer).to receive(:generate_summary).and_return("Mocked summary")
+        allow(AiSummarizerService).to receive(:new).and_return(mock_summarizer)
+        
         allow_any_instance_of(EnhancedNewsFetcher).to receive(:fetch_articles).and_return([
           { 
             title: "Article 1", 
             url: "https://example.com/1", 
             content: "Content 1", 
-            summary: "Description 1",  # Changed from description to summary
-            publish_date: Time.current  # Changed from published_at to publish_date
+            summary: "Description 1",
+            publish_date: Time.current
           },
           { 
             title: "Article 2", 
             url: "https://example.com/2", 
             content: "Content 2", 
-            summary: "Description 2",  # Changed from description to summary
-            publish_date: Time.current  # Changed from published_at to publish_date
+            summary: "Description 2",
+            publish_date: Time.current
           }
         ])
       }
@@ -250,7 +255,6 @@ RSpec.describe Admin::NewsSourcesController, type: :request do
         get preview_admin_news_source_path(news_source)
         
         expect(response).to be_successful
-        # Check for more specific content that we know should be there
         expect(response.body).to include("Article 1")
         expect(response.body).to include("Article 2")
       end
