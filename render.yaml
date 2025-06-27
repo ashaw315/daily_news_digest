@@ -5,7 +5,8 @@ services:
     plan: free
     buildCommand: |
       bundle install
-      bundle exec rake assets:precompile
+      rm -rf public/assets
+      RAILS_ENV=production bundle exec rake assets:precompile
       bundle exec rake assets:clean
     startCommand: bundle exec puma -C config/puma.rb
     envVars:
@@ -16,6 +17,8 @@ services:
       - key: RAILS_ENV
         value: production
       - key: RAILS_SERVE_STATIC_FILES
+        value: true
+      - key: RAILS_LOG_TO_STDOUT
         value: true
   - type: redis
     name: redis
