@@ -3,7 +3,10 @@ services:
     name: daily-news-digest
     env: ruby
     plan: free
-    buildCommand: bundle install
+    buildCommand: |
+      bundle install
+      bundle exec rake assets:precompile
+      bundle exec rake assets:clean
     startCommand: bundle exec puma -C config/puma.rb
     envVars:
       - key: RAILS_MASTER_KEY
@@ -12,6 +15,8 @@ services:
         sync: false
       - key: RAILS_ENV
         value: production
+      - key: RAILS_SERVE_STATIC_FILES
+        value: true
   - type: redis
     name: redis
     plan: free 
