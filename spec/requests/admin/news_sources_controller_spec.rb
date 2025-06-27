@@ -233,15 +233,15 @@ RSpec.describe Admin::NewsSourcesController, type: :request do
             title: "Article 1", 
             url: "https://example.com/1", 
             content: "Content 1", 
-            description: "Description 1",
-            published_at: Time.current
+            summary: "Description 1",  # Changed from description to summary
+            publish_date: Time.current  # Changed from published_at to publish_date
           },
           { 
             title: "Article 2", 
             url: "https://example.com/2", 
             content: "Content 2", 
-            description: "Description 2",
-            published_at: Time.current
+            summary: "Description 2",  # Changed from description to summary
+            publish_date: Time.current  # Changed from published_at to publish_date
           }
         ])
       }
@@ -250,7 +250,9 @@ RSpec.describe Admin::NewsSourcesController, type: :request do
         get preview_admin_news_source_path(news_source)
         
         expect(response).to be_successful
-        expect(response.body).to include("Preview")
+        # Check for more specific content that we know should be there
+        expect(response.body).to include("Article 1")
+        expect(response.body).to include("Article 2")
       end
       
       it "returns JSON when requested" do
