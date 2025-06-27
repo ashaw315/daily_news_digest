@@ -96,7 +96,7 @@ RSpec.describe "End-to-End Integration", type: :system do
       .to_return(status: 200, body: sample_rss_content, headers: {'Content-Type' => 'application/rss+xml'})
     
     # Mock NewsFetcher to return our test articles
-    allow_any_instance_of(NewsFetcher).to receive(:fetch_articles).and_return(@articles)
+    allow_any_instance_of(EnhancedNewsFetcher).to receive(:fetch_articles).and_return(@articles)
   end
   
   scenario "Regular user journey from registration to receiving personalized news" do

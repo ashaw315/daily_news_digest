@@ -228,7 +228,7 @@ RSpec.describe Admin::NewsSourcesController, type: :request do
       before { 
         sign_in admin_user
         
-        allow_any_instance_of(NewsFetcher).to receive(:fetch_articles).and_return([
+        allow_any_instance_of(EnhancedNewsFetcher).to receive(:fetch_articles).and_return([
           { 
             title: "Article 1", 
             url: "https://example.com/1", 
