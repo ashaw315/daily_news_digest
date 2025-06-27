@@ -12,6 +12,11 @@ RSpec.describe EnhancedNewsFetcher, type: :service do
     unless defined?(Feedjira)
       class_double("Feedjira").as_stubbed_const
     end
+
+    class AiSummarizerService
+      def initialize; end
+      def generate_summary(text); "Summary: #{text[0..50]}..."; end
+    end
   end
 
   before do
@@ -21,6 +26,20 @@ RSpec.describe EnhancedNewsFetcher, type: :service do
       body: rss_feed_xml,
       headers: {'Content-Type' => 'application/rss+xml'}
     )
+
+    # Stub factory if it doesn't exist
+    unless defined?(FactoryBot)
+      def create(factory_name, attributes = {})
+        case factory_name
+        when :news_source
+          OpenStruct.new({
+            id: 1,
+            name: attributes[:name] || "Test Source",
+            url: attributes[:url] || "http://example.com/feed"
+          })
+        end
+      end
+    end
   end
   
   describe "#initialize" do
