@@ -5,5 +5,6 @@ FactoryBot.define do
     format { "rss" }
     active { true }
     settings { {} }
+    association :topic
   end
 end

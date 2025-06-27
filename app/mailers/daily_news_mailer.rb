@@ -4,23 +4,8 @@ class DailyNewsMailer < ApplicationMailer
 
   def daily_digest(user, articles)
     @user = user
+    @articles = articles
     
-    # Get recent articles from subscribed sources
-    articles_from_db = Article
-      .includes(:news_source)  # Make sure to include news_source
-      .where(news_source_id: user.news_source_ids)
-      .where('publish_date >= ?', 48.hours.ago)
-      .order(publish_date: :desc)
-    
-    # Group by source and take top 3 most recent from each
-    articles_by_source = articles_from_db.group_by(&:news_source_id)
-    @articles = articles_by_source.values.flat_map do |source_articles|
-      source_articles
-        .sort_by(&:publish_date)
-        .reverse
-        .take(3)  # Take 3 most recent from each source
-    end
-  
     puts "\n=== Article Distribution in Email ==="
     @articles.group_by(&:news_source).each do |source, articles|
       puts "#{source&.name || 'Unknown'}: #{articles.length} articles"
