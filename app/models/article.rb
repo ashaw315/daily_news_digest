@@ -57,4 +57,8 @@ class Article < ApplicationRecord
   def source_url
     news_source&.url
   end
+
+  def description
+    summary
+  end
 end

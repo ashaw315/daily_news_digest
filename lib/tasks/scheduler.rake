@@ -28,4 +28,12 @@ namespace :scheduler do
     
     Rails.logger.info("Scheduled #{count} weekly email jobs")
   end
+
+  desc "Fetch latest articles for all active news sources"
+  task fetch_articles: :environment do
+    sources = NewsSource.where(active: true)
+    fetcher = EnhancedNewsFetcher.new(sources: sources)
+    fetcher.fetch_articles
+    puts "Fetched articles for #{sources.count} sources."
+  end
 end 

@@ -35,7 +35,9 @@ Rails.application.routes.draw do
     get 'dashboard', to: 'dashboard#index'
     resources :topics
     resources :news_sources
-    resources :users, only: [:index, :show, :destroy]
+    resources :users, only: [:index, :show, :destroy] do
+      post :send_test_email, on: :member
+    end
     resources :email_metrics, only: [:index]
     resources :news_sources do
       member do

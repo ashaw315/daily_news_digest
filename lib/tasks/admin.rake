@@ -32,4 +32,11 @@ namespace :admin do
       end
     end
   end
+
+  desc "Delete articles older than 24 hours"
+  task purge_old_articles: :environment do
+    cutoff = 24.hours.ago
+    deleted = Article.where("created_at < ?", cutoff).delete_all
+    puts "Deleted #{deleted} articles older than 24 hours."
+  end
 end 

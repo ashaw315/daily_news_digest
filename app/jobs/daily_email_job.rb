@@ -9,13 +9,13 @@ class DailyEmailJob < ApplicationJob
     user = job.arguments.first
     
     if user && user.is_a?(User)
-      Rails.logger.error("Email delivery failed 3 times for user #{user.id} (#{user.email}). Purging user record.")
-      Rails.logger.error("Error: #{error.message}")
+      # Rails.logger.error("Email delivery failed 3 times for user #{user.id} (#{user.email}). Purging user record.")
+      # Rails.logger.error("Error: #{error.message}")
       
       # Purge the user from the database
       user.destroy
     else
-      Rails.logger.error("Email delivery failed 3 times but couldn't identify user. Error: #{error.message}")
+      # Rails.logger.error("Email delivery failed 3 times but couldn't identify user. Error: #{error.message}")
     end
   end
   
@@ -26,7 +26,7 @@ class DailyEmailJob < ApplicationJob
     # Skip if user prefers weekly emails
     return unless user.email_frequency == 'daily'
     
-    Rails.logger.info("Sending daily news digest to user #{user.id} (#{user.email})")
+    # Rails.logger.info("Sending daily news digest to user #{user.id} (#{user.email})")
     
     # Fetch articles based on user preferences (with default days: 1)
     articles = ArticleFetcher.fetch_for_user(user)
@@ -34,6 +34,6 @@ class DailyEmailJob < ApplicationJob
     # Send the email
     DailyNewsMailer.daily_digest(user, articles).deliver_now
     
-    Rails.logger.info("Successfully sent daily news digest to user #{user.id} (#{user.email})")
+    # Rails.logger.info("Successfully sent daily news digest to user #{user.id} (#{user.email})")
   end
 end

@@ -118,34 +118,24 @@ class Admin::NewsSourcesController < Admin::BaseController
   end
 
   def preview
-    # Create a fetcher with just this source, in detailed preview mode
-    fetcher = NewsFetcher.new(
-      sources: [
-        {
-          id: @source.id,
-          name: @source.name,
-          url: @source.url,
-          type: :rss,  # Always use RSS format
-          settings: @source.settings
-        }
-      ],
-      detailed_preview: true,
-      preview_article_count: 3  # Limit to 3 articles for preview
+    # Use EnhancedNewsFetcher with just this source, limit to 3 articles for preview
+    fetcher = EnhancedNewsFetcher.new(
+      sources: [@source],
+      max_articles: 3
     )
-    
+  
     # Fetch articles
     @articles = fetcher.fetch_articles || []
-    
+  
     # Log the results
     Rails.logger.info("Preview fetched #{@articles.size} articles")
     @articles.each_with_index do |article, index|
       Rails.logger.info("Article #{index+1}: #{article[:title]}")
       Rails.logger.info("  URL: #{article[:url]}")
-      Rails.logger.info("  Content length: #{article[:content]&.length || 0} characters")
       Rails.logger.info("  Description length: #{article[:description]&.length || 0} characters")
       Rails.logger.info("  Description: #{article[:description]}")
     end
-    
+  
     respond_to do |format|
       format.html
       format.json { render json: @articles }
@@ -159,7 +149,7 @@ class Admin::NewsSourcesController < Admin::BaseController
   end
 
   def source_params
-    permitted = params.require(:news_source).permit(:name, :url, :active, :format, :is_validated)
+    permitted = params.require(:news_source).permit(:name, :url, :active, :format, :is_validated, :topic_id)
     
     # Set an empty hash for settings since we don't need complex settings for RSS
     permitted[:settings] = {}

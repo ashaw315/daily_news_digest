@@ -23,7 +23,7 @@ class NewsFetcher
     
     # Try sources in order of priority
     @sources.each do |source|
-      Rails.logger.info("Fetching articles from #{source[:name]} via RSS")
+      # Rails.logger.info("Fetching articles from #{source[:name]} via RSS")
       
       begin
         # Limit to fewer articles for detailed preview
@@ -34,7 +34,7 @@ class NewsFetcher
         
         # For detailed preview, fetch full content and generate better summaries
         if @detailed_preview
-          Rails.logger.info("Enhancing #{new_articles.length} articles with full content and summaries")
+          # Rails.logger.info("Enhancing #{new_articles.length} articles with full content and summaries")
           new_articles = enhance_articles_with_detailed_summaries(new_articles)
         end
         
@@ -49,7 +49,7 @@ class NewsFetcher
         break if articles.length >= article_limit
       rescue => e
         error_msg = "Error fetching from #{source[:name]}: #{e.message}"
-        Rails.logger.error(error_msg)
+        # Rails.logger.error(error_msg)
         @errors << error_msg
         # Continue to next source on error
       end
@@ -75,12 +75,12 @@ class NewsFetcher
       begin
         # Skip if no URL
         if article[:url].blank?
-          Rails.logger.warn("Article has no URL, skipping content fetch: #{article[:title]}")
+          # Rails.logger.warn("Article has no URL, skipping content fetch: #{article[:title]}")
           enhanced_articles << article
           next
         end
         
-        Rails.logger.info("Fetching full content for: #{article[:url]}")
+        # Rails.logger.info("Fetching full content for: #{article[:url]}")
         
         # Fetch full content
         full_content = fetch_full_content(article[:url])
@@ -93,10 +93,10 @@ class NewsFetcher
           desired_word_count = 250 # or 300, or make this a constant/configurable
 
           if @summarizer
-            Rails.logger.info("Generating AI summary for: #{article[:title]}")
+            # Rails.logger.info("Generating AI summary for: #{article[:title]}")
             summary = @summarizer.summarize(full_content, desired_word_count)
             article[:description] = summary
-            Rails.logger.info("Summary generated: #{summary.split.size} words")
+            # Rails.logger.info("Summary generated: #{summary.split.size} words")
           else
             # Fallback: take the first N words
             words = full_content.split(/\s+/)
@@ -104,14 +104,14 @@ class NewsFetcher
             article[:description] += '...' if words.length > desired_word_count
           end
           
-          Rails.logger.info("Successfully processed article: #{article[:title]}")
+          # Rails.logger.info("Successfully processed article: #{article[:title]}")
         else
-          Rails.logger.warn("Failed to fetch meaningful content for: #{article[:url]}")
-          Rails.logger.info("Content length: #{full_content&.length || 0} characters")
+          # Rails.logger.warn("Failed to fetch meaningful content for: #{article[:url]}")
+          # Rails.logger.info("Content length: #{full_content&.length || 0} characters")
         end
       rescue => e
-        Rails.logger.error("Error processing article #{article[:url]}: #{e.message}")
-        Rails.logger.error(e.backtrace.join("\n"))
+        # Rails.logger.error("Error processing article #{article[:url]}: #{e.message}")
+        # Rails.logger.error(e.backtrace.join("\n"))
       end
       
       enhanced_articles << article
