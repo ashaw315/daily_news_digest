@@ -3,6 +3,8 @@ require 'rails_helper'
 RSpec.describe EnhancedNewsFetcher, type: :service do
   include_context "rss validation stubs"
   let(:fetcher) { EnhancedNewsFetcher.new }
+  let(:tech_topic) { create(:topic, name: 'Technology') }
+  let(:news_source) { create(:news_source, name: 'Test Feed', topic: tech_topic) }
   
   before(:all) do
     unless defined?(HTTParty)
@@ -144,46 +146,46 @@ RSpec.describe EnhancedNewsFetcher, type: :service do
     end
   end
   
-  describe "#save_articles" do
-    let(:news_source) { create(:news_source, name: "Test Source") }
-    let(:articles) do
-      [
-        {
-          title: "Test Article",
-          summary: "Test Summary",
-          url: "http://example.com/unique-article",
-          publish_date: Time.current,
-          source: news_source.name,
-          news_source_id: news_source.id,
-          topic: "technology"
-        }.with_indifferent_access
-      ]
-    end
-    
+  describe '#save_articles' do
     it "creates new article records" do
-      expect {
-        fetcher.send(:save_articles, articles)
-      }.to change(Article, :count).by(1)
-      
+      article_data = {
+        title: 'Test Article',
+        summary: 'Test summary',
+        url: 'http://example.com/article1',
+        publish_date: Time.current,
+        source: news_source.name,
+        news_source_id: news_source.id
+      }
+
+      fetcher = EnhancedNewsFetcher.new
+      fetcher.send(:save_articles, [article_data])
+
       article = Article.last
-      expect(article.title).to eq("Test Article")
-      expect(article.summary).to eq("Test Summary")
-      expect(article.url).to eq("http://example.com/unique-article")
-      expect(article.news_source).to eq(news_source)
-      expect(article.topic).to eq("technology")
+      expect(article.title).to eq('Test Article')
+      expect(article.summary).to eq('Test summary')
+      expect(article.url).to eq('http://example.com/article1')
+      expect(article.source).to eq(news_source.name)
+      expect(article.news_source_id).to eq(news_source.id)
+      # Topic should come from the news source's topic
+      expect(article.topic).to eq(tech_topic.name)
     end
-    
+
     it "skips existing articles" do
-      Article.create!(
-        title: "Existing Article",
-        url: "http://example.com/unique-article",
-        publish_date: 1.day.ago,
+      existing_article = create(:article, 
+        url: 'http://example.com/article1',
         news_source: news_source
       )
-      
-      expect {
-        fetcher.send(:save_articles, articles)
-      }.not_to change(Article, :count)
+
+      article_data = {
+        title: 'Test Article',
+        url: 'http://example.com/article1',
+        news_source_id: news_source.id
+      }
+
+      fetcher = EnhancedNewsFetcher.new
+      fetcher.send(:save_articles, [article_data])
+
+      expect(Article.count).to eq(1)
     end
   end
   
