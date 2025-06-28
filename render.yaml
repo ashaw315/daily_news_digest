@@ -20,27 +20,6 @@ services:
         value: "1"
       - key: HOST
         value: daily-news-digest.onrender.com
-  - type: redis
-    name: redis
-    plan: free
-  - type: worker
-    name: sidekiq
-    env: ruby
-    plan: free
-    buildCommand: bundle install
-    startCommand: bundle exec sidekiq
-    envVars:
-      - key: RAILS_MASTER_KEY
-        sync: false
-      - key: RAILS_ENV
-        value: production
-      - key: REDIS_URL
-        fromService:
-          type: redis
-          name: redis
-          property: connectionString
-      - key: DISABLE_DATABASE_ENVIRONMENT_CHECK
-        value: "1"
 
 databases:
   - name: postgres
