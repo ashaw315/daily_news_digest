@@ -3,31 +3,20 @@ services:
     name: daily-news-digest
     env: ruby
     plan: free
-    buildCommand: |
-      bundle install
-      rm -rf public/assets
-      RAILS_ENV=production bundle exec rake assets:precompile
-      bundle exec rake assets:clean
+    buildCommand: bundle install && bundle exec rails assets:precompile
     startCommand: bundle exec puma -C config/puma.rb
-    releaseCommand: |
-      bundle exec rake db:schema:load
-      bundle exec rake db:migrate
     envVars:
       - key: RAILS_MASTER_KEY
         sync: false
       - key: OPENAI_API_KEY
         sync: false
-      - key: DATABASE_URL
-        sync: false
       - key: RAILS_ENV
         value: production
       - key: RAILS_SERVE_STATIC_FILES
         value: true
-      - key: RAILS_LOG_TO_STDOUT
-        value: true
   - type: redis
     name: redis
-    plan: free 
+    plan: free
     ipAllowList: []
   - type: worker
     name: sidekiq
@@ -41,5 +30,8 @@ services:
           type: redis
           name: redis
           property: connectionString
-      - key: DATABASE_URL
-        sync: false
+
+databases:
+  - name: postgres
+    plan: free
+    ipAllowList: []
