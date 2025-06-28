@@ -96,9 +96,10 @@ Rails.application.configure do
     protocol: 'https'
   }
   
-  config.action_mailer.delivery_method = :smtp
+  # Test delivery - no real emails, just logs them
+  config.action_mailer.delivery_method = :test
   config.action_mailer.perform_deliveries = true
-  config.action_mailer.raise_delivery_errors = true
+  config.action_mailer.raise_delivery_errors = false
   
   config.action_mailer.smtp_settings = {
     address: 'smtp.sendgrid.net',
