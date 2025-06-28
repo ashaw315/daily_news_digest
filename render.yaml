@@ -3,7 +3,10 @@ services:
     name: daily-news-digest
     env: ruby
     plan: free
-    buildCommand: bundle install && bundle exec rails assets:precompile && bundle exec rake db:migrate
+    buildCommand: |
+      bundle install
+      bundle exec rails assets:precompile
+      bundle exec rake db:schema:load
     startCommand: bundle exec puma -C config/puma.rb
     envVars:
       - key: RAILS_MASTER_KEY
