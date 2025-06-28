@@ -32,13 +32,23 @@ Rails.application.routes.draw do
 
    # Admin routes
    namespace :admin do
+    # Cron job endpoints
+    get 'cron/purge_articles'
+    get 'cron/fetch_articles'
+    get 'cron/schedule_daily_emails'
+
+    # Dashboard
     get 'dashboard', to: 'dashboard#index'
+
+    # Resources
     resources :topics
-    resources :news_sources
+    
     resources :users, only: [:index, :show, :destroy] do
       post :send_test_email, on: :member
     end
+    
     resources :email_metrics, only: [:index]
+    
     resources :news_sources do
       member do
         post :validate, defaults: { format: :json }
