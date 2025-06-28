@@ -3,7 +3,7 @@ services:
     name: daily-news-digest
     env: ruby
     plan: free
-    buildCommand: bundle install && bundle exec rails assets:precompile
+    buildCommand: bundle install && bundle exec rails assets:precompile && bundle exec rake db:schema:load
     startCommand: bundle exec puma -C config/puma.rb
     envVars:
       - key: RAILS_MASTER_KEY
@@ -14,24 +14,9 @@ services:
         value: production
       - key: RAILS_SERVE_STATIC_FILES
         value: true
-  - type: redis
-    name: redis
-    plan: free
-    ipAllowList: []
-  - type: worker
-    name: sidekiq
-    env: ruby
-    plan: free
-    buildCommand: bundle install
-    startCommand: bundle exec sidekiq
-    envVars:
-      - key: REDIS_URL
-        fromService:
-          type: redis
-          name: redis
-          property: connectionString
+      - key: RAILS_LOG_TO_STDOUT
+        value: true
 
 databases:
   - name: postgres
     plan: free
-    ipAllowList: []
