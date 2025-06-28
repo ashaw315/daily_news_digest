@@ -8,7 +8,9 @@ services:
       rm -rf public/assets
       RAILS_ENV=production bundle exec rake assets:precompile
       bundle exec rake assets:clean
-    startCommand: bundle exec puma -C config/puma.rb
+    startCommand: |
+      bundle exec rake db:migrate
+      bundle exec puma -C config/puma.rb
     envVars:
       - key: RAILS_MASTER_KEY
         sync: false
