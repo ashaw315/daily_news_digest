@@ -17,10 +17,8 @@ class EnhancedNewsFetcher
   def fetch_articles
     all_articles = []
     
-    puts "\n=== Starting Article Fetch ==="
     @sources.each do |source|
       begin
-        puts "Fetching from: #{source.name}"
         feed = fetch_feed(source.url)
         
         # Get only the 3 most recent entries
@@ -33,31 +31,18 @@ class EnhancedNewsFetcher
           fetch_from_rss_and_summarize(entry, source.name)
         end.compact
         
-        puts "  - Got #{source_articles.length} articles from #{source.name}"
-        puts "  - Article titles:"
-        source_articles.each { |a| puts "    * #{a[:title]}" }
-        
         if source_articles.present?
           source_articles.each { |a| a[:news_source_id] = source.id }
           all_articles.concat(source_articles)
           update_source_stats(source, 'success', source_articles.length)
         else
-          puts "  - No articles found for #{source.name}"
           update_source_stats(source, 'no_articles', 0)
         end
       rescue => e
-        puts "  - Error with #{source.name}: #{e.message}"
+        Rails.logger.error("[NewsFetcher] Error fetching from #{source.name}: #{e.message}")
         update_source_stats(source, 'error', 0)
       end
     end
-  
-    puts "\n=== Article Fetch Summary ==="
-    @sources.each do |source|
-      count = all_articles.count { |a| a[:news_source_id] == source.id }
-      puts "#{source.name}: #{count} articles"
-    end
-    puts "Total articles fetched: #{all_articles.length}"
-    puts "=========================\n"
     
     save_articles(all_articles)
     all_articles
@@ -69,7 +54,7 @@ class EnhancedNewsFetcher
     response = URI.open(url, "User-Agent" => USER_AGENT).read
     Feedjira.parse(response)
   rescue => e
-    puts "  - Failed to fetch feed: #{e.message}"
+    Rails.logger.error("[NewsFetcher] Failed to fetch feed: #{e.message}")
     raise
   end
 
@@ -78,18 +63,12 @@ class EnhancedNewsFetcher
     url = entry.url || entry.link
     publish_date = entry.published || Time.current
     
-    puts "\n=== Processing Article ==="
-    puts "Title: #{title}"
-    puts "URL: #{url}"
-    puts "Source: #{source_name}"
-    
     # Try to get full article content first
     content = fetch_full_content_with_readability(url)
     content_source = "Article page"
   
     # Fallback to RSS content if article fetch fails
     if content.blank?
-      # Try all possible RSS content fields
       content = [
         entry.try(:content),
         entry.try(:summary),
@@ -103,17 +82,11 @@ class EnhancedNewsFetcher
   
     # Clean up content
     content = content.to_s.gsub(/\s+/, ' ').strip
-    
-    puts "Content source: #{content_source}"
-    puts "Content length: #{content.length} chars"
-    puts "Content preview: #{content[0..200]}..." if content.present?
   
     # Always generate summary, even for short content
     summary = if content.present?
-      puts "Generating AI summary from #{content.length} chars..."
       @summarizer.generate_summary(content)
     else
-      puts "No content available, using title"
       title
     end
   
@@ -150,14 +123,12 @@ class EnhancedNewsFetcher
         min_text_length: 25
       ).content
       
-      content = Nokogiri::HTML(article).text.strip
-      puts "  * Successfully fetched article content (#{content.length} chars)"
-      content
+      Nokogiri::HTML(article).text.strip
     rescue OpenURI::HTTPError => e
-      puts "  * HTTP error fetching article: #{e.message}"
+      Rails.logger.error("[NewsFetcher] HTTP error fetching article: #{e.message}")
       ""
     rescue => e
-      puts "  * Error fetching article: #{e.message}"
+      Rails.logger.error("[NewsFetcher] Error fetching article: #{e.message}")
       ""
     end
   end
@@ -169,7 +140,7 @@ class EnhancedNewsFetcher
       last_fetch_article_count: article_count
     )
   rescue => e
-    puts "  - Failed to update stats for #{source.name}: #{e.message}"
+    Rails.logger.error("[NewsFetcher] Failed to update stats for #{source.name}: #{e.message}")
   end
 
   def save_articles(articles)
@@ -180,13 +151,12 @@ class EnhancedNewsFetcher
       existing = Article.find_by(url: article_data[:url])
 
       if existing
-        puts "  - Skipping existing article: #{article_data[:title]}"
         existing_articles += 1
         next
       end
 
       news_source = NewsSource.find(article_data[:news_source_id])
-      topic_name = news_source.topic&.name # Assuming Topic model has a 'name' field
+      topic_name = news_source.topic&.name
       
       Article.create!(
         title: article_data[:title],
@@ -195,17 +165,12 @@ class EnhancedNewsFetcher
         publish_date: article_data[:publish_date],
         news_source_id: article_data[:news_source_id],
         source: article_data[:source],
-        topic: topic_name  # Use the associated Topic's name
+        topic: topic_name
       )
-      puts "  - Saved new article: #{article_data[:title]}"
       new_articles += 1
     end
 
-    puts "\n=== Article Save Summary ==="
-    puts "New articles saved: #{new_articles}"
-    puts "Existing articles skipped: #{existing_articles}"
-    puts "Total processed: #{articles.length}"
-    puts "========================="
+    Rails.logger.info("[NewsFetcher] Articles saved - New: #{new_articles}, Existing: #{existing_articles}, Total: #{articles.length}")
   end
 
   def strip_html(text)

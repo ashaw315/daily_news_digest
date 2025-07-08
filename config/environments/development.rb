@@ -56,6 +56,9 @@ Rails.application.configure do
     enable_starttls_auto: true
   }
 
+  # Use async queue adapter for development (instead of sidekiq)
+  config.active_job.queue_adapter = :async
+
   # Print deprecation notices to the Rails logger.
   config.active_support.deprecation = :log
 

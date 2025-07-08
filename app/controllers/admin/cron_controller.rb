@@ -21,12 +21,39 @@ class Admin::CronController < Admin::BaseController
     Rails.logger.info "[CRON] Starting article fetch at #{Time.current}"
     
     with_task_lock("fetch_articles") do
-      Rake::Task['scheduler:fetch_articles'].reenable
-      Rake::Task['scheduler:fetch_articles'].invoke
+      # Get only news sources that have subscribed users
+      active_sources = NewsSource.joins(:users)
+                                .where(users: { is_subscribed: true })
+                                .where(active: true)
+                                .where.not(url: [nil, ''])
+                                .distinct
+  
+      if active_sources.empty?
+        Rails.logger.info "[CRON] No active sources with subscribed users found"
+        return render_success("No active sources with subscribed users found")
+      end
       
-      track_cron_metric("fetch_articles")
-      Rails.logger.info "[CRON] Articles fetch completed at #{Time.current}"
-      render_success("Articles fetch task completed successfully")
+      subscribed_users_count = User.joins(:news_sources)
+                                  .where(is_subscribed: true)
+                                  .where(news_sources: { id: active_sources.pluck(:id) })
+                                  .distinct
+                                  .count
+  
+      # Track how many sources we're fetching from
+      source_count = active_sources.count
+      Rails.logger.info "[CRON] Fetching articles from #{source_count} active sources for #{subscribed_users_count} subscribed users"
+  
+      fetcher = EnhancedNewsFetcher.new(sources: active_sources)
+      articles = fetcher.fetch_articles
+      
+      # Return a concise success message with counts
+      track_cron_metric("fetch_articles", {
+        source_count: source_count,
+        article_count: articles.length
+      })
+      
+      Rails.logger.info "[CRON] Articles fetch completed. Fetched #{articles.length} articles from #{source_count} sources for #{subscribed_users_count} subscribed users"
+      render_success("Fetched #{articles.length} articles from #{source_count} sources for #{subscribed_users_count} subscribed users")
     end
   rescue => e
     Rails.logger.error "[CRON] Articles fetch failed: #{e.full_message}"
@@ -106,28 +133,38 @@ class Admin::CronController < Admin::BaseController
     response = {
       status: "success",
       message: message,
-      timestamp: Time.current
+      timestamp: Time.current.iso8601
     }
     
-    respond_to do |format|
-      format.json { render json: response }
-      format.html { render plain: message }
+    if defined?(@_response) && @_response
+      respond_to do |format|
+        format.json { render json: response }
+        format.html { render plain: message }
+      end
+    else
+      # When running from rake task
+      puts "\nSuccess: #{message}"
+      puts "Timestamp: #{Time.current.iso8601}"
     end
   end
-
+  
   def render_error(message, error = nil, status: 500)
     response = {
       status: "error",
       message: message,
-      details: Rails.env.development? ? error&.full_message : nil,
-      timestamp: Time.current
-    }.compact
-
-    Rails.logger.error("[CRON] #{message}: #{error&.full_message}")
-    
-    respond_to do |format|
-      format.json { render json: response, status: status }
-      format.html { render plain: message, status: status }
+      timestamp: Time.current.iso8601
+    }
+  
+    if defined?(@_response) && @_response
+      respond_to do |format|
+        format.json { render json: response, status: status }
+        format.html { render plain: message, status: status }
+      end
+    else
+      # When running from rake task
+      puts "\nError: #{message}"
+      puts "Timestamp: #{Time.current.iso8601}"
+      puts "Details: #{error.full_message}" if error && Rails.env.development?
     end
   end
 end
