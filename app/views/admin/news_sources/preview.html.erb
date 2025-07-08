@@ -16,9 +16,13 @@
                 <% end %>
               </div>
               <div class="article-summary" style="margin-bottom: 10px;">
-                <h6 class="helper-text" style="margin-bottom: 4px;">Article Summary:</h6>
+                <h6 class="helper-text" style="margin-bottom: 4px;">AI-Generated Summary:</h6>
                 <div class="p-3 bg-light rounded" style="background: #f8f8f8; border-radius: 6px; padding: 12px;">
-                  <%= simple_format(article[:description]) %>
+                  <% if article[:summary].present? %>
+                    <%= simple_format(article[:summary]) %>
+                  <% else %>
+                    <em class="text-muted">Summary not available</em>
+                  <% end %>
                 </div>
               </div>
               <div>

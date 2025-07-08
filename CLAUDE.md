@@ -22,6 +22,7 @@ This is a Ruby on Rails application for aggregating and managing daily news arti
 - Enhanced news fetching service with validation
 - Streamlined deployment by removing Redis/Sidekiq
 - Updated email delivery configuration for production
+- Fixed news source preview to display AI-generated summaries
 
 ## Testing
 Run `rails test` to execute the test suite.

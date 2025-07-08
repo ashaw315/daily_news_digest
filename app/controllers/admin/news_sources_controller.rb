@@ -132,8 +132,8 @@ class Admin::NewsSourcesController < Admin::BaseController
     @articles.each_with_index do |article, index|
       Rails.logger.info("Article #{index+1}: #{article[:title]}")
       Rails.logger.info("  URL: #{article[:url]}")
-      Rails.logger.info("  Description length: #{article[:description]&.length || 0} characters")
-      Rails.logger.info("  Description: #{article[:description]}")
+      Rails.logger.info("  Summary length: #{article[:summary]&.length || 0} characters")
+      Rails.logger.info("  Summary: #{article[:summary]}")
     end
   
     respond_to do |format|
