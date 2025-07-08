@@ -102,68 +102,114 @@ RSpec.describe SourceValidatorService do
     let(:service) { described_class.new(rss_source) }
     
     it 'returns true when all required fields are present' do
-      item = double(
-        title: 'Test Title',
-        link: 'https://example.com/article',
-        description: 'Test description',
-        respond_to?: true
-      )
-      allow(item).to receive(:present?).and_return(true)
+      item = double('RSS Item')
+      allow(item).to receive(:title).and_return('Test Title')
+      allow(item).to receive(:link).and_return('https://example.com/article')
+      allow(item).to receive(:description).and_return('Test description')
+      allow(item).to receive(:respond_to?).with(:link).and_return(true)
+      allow(item).to receive(:respond_to?).with(:description).and_return(true)
+      allow(item).to receive(:respond_to?).with(:content).and_return(false)
+      
+      # Mock the present? calls for each field
+      allow(item.title).to receive(:present?).and_return(true)
+      allow(item.link).to receive(:present?).and_return(true)
+      allow(item.description).to receive(:present?).and_return(true)
       
       expect(service.send(:has_required_rss_fields?, item)).to be true
     end
     
     it 'returns false when title is missing' do
-      item = double(
-        title: nil,
-        link: 'https://example.com/article',
-        description: 'Test description',
-        respond_to?: true
-      )
-      allow(item).to receive(:present?).and_return(false)
+      # Create a title object that responds to present? as false
+      title_obj = double('Title')
+      allow(title_obj).to receive(:present?).and_return(false)
+      
+      link_obj = double('Link')
+      allow(link_obj).to receive(:present?).and_return(true)
+      
+      description_obj = double('Description')
+      allow(description_obj).to receive(:present?).and_return(true)
+      
+      item = double('RSS Item')
+      allow(item).to receive(:title).and_return(title_obj)
+      allow(item).to receive(:link).and_return(link_obj)
+      allow(item).to receive(:description).and_return(description_obj)
+      allow(item).to receive(:respond_to?).with(:link).and_return(true)
+      allow(item).to receive(:respond_to?).with(:description).and_return(true)
+      allow(item).to receive(:respond_to?).with(:content).and_return(false)
       
       expect(service.send(:has_required_rss_fields?, item)).to be false
     end
     
     it 'returns false when link is missing' do
-      item = double(
-        title: 'Test Title',
-        link: nil,
-        description: 'Test description',
-        respond_to?: true
-      )
-      allow(item).to receive(:present?).and_return(false)
+      title_obj = double('Title')
+      allow(title_obj).to receive(:present?).and_return(true)
+      
+      # Create a link object that responds to present? as false
+      link_obj = double('Link')
+      allow(link_obj).to receive(:present?).and_return(false)
+      
+      description_obj = double('Description')
+      allow(description_obj).to receive(:present?).and_return(true)
+      
+      item = double('RSS Item')
+      allow(item).to receive(:title).and_return(title_obj)
+      allow(item).to receive(:link).and_return(link_obj)
+      allow(item).to receive(:description).and_return(description_obj)
+      allow(item).to receive(:respond_to?).with(:link).and_return(true)
+      allow(item).to receive(:respond_to?).with(:description).and_return(true)
+      allow(item).to receive(:respond_to?).with(:content).and_return(false)
       
       expect(service.send(:has_required_rss_fields?, item)).to be false
     end
     
     it 'returns false when both description and content are missing' do
-      item = double(
-        title: 'Test Title',
-        link: 'https://example.com/article',
-        description: nil,
-        content: nil,
-        respond_to?: true
-      )
-      allow(item).to receive(:present?).and_return(false)
+      title_obj = double('Title')
+      allow(title_obj).to receive(:present?).and_return(true)
+      
+      link_obj = double('Link')
+      allow(link_obj).to receive(:present?).and_return(true)
+      
+      # Create description and content objects that respond to present? as false
+      description_obj = double('Description')
+      allow(description_obj).to receive(:present?).and_return(false)
+      
+      content_obj = double('Content')
+      allow(content_obj).to receive(:present?).and_return(false)
+      
+      item = double('RSS Item')
+      allow(item).to receive(:title).and_return(title_obj)
+      allow(item).to receive(:link).and_return(link_obj)
+      allow(item).to receive(:description).and_return(description_obj)
+      allow(item).to receive(:content).and_return(content_obj)
+      allow(item).to receive(:respond_to?).with(:link).and_return(true)
+      allow(item).to receive(:respond_to?).with(:description).and_return(true)
+      allow(item).to receive(:respond_to?).with(:content).and_return(true)
       
       expect(service.send(:has_required_rss_fields?, item)).to be false
     end
     
     it 'returns true when description is missing but content is present' do
-      item = double(
-        title: 'Test Title',
-        link: 'https://example.com/article',
-        description: nil,
-        content: 'Test content',
-        respond_to?: true
-      )
+      title_obj = double('Title')
+      allow(title_obj).to receive(:present?).and_return(true)
       
-      # This is a bit tricky - we need to make it so present? returns
-      # true for everything except description
-      allow(item).to receive(:present?).and_return(true)
-      allow(item.description).to receive(:present?).and_return(false)
-      allow(item.content).to receive(:present?).and_return(true)
+      link_obj = double('Link')
+      allow(link_obj).to receive(:present?).and_return(true)
+      
+      # Description missing but content present
+      description_obj = double('Description')
+      allow(description_obj).to receive(:present?).and_return(false)
+      
+      content_obj = double('Content')
+      allow(content_obj).to receive(:present?).and_return(true)
+      
+      item = double('RSS Item')
+      allow(item).to receive(:title).and_return(title_obj)
+      allow(item).to receive(:link).and_return(link_obj)
+      allow(item).to receive(:description).and_return(description_obj)
+      allow(item).to receive(:content).and_return(content_obj)
+      allow(item).to receive(:respond_to?).with(:link).and_return(true)
+      allow(item).to receive(:respond_to?).with(:description).and_return(true)
+      allow(item).to receive(:respond_to?).with(:content).and_return(true)
       
       expect(service.send(:has_required_rss_fields?, item)).to be true
     end

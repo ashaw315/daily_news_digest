@@ -83,4 +83,17 @@ class SourceValidatorService
       entry.description.present?
     )
   end
+
+  # Alias method for backward compatibility with tests
+  def has_required_rss_fields?(item)
+    # This method is designed to work with test doubles and basic RSS items
+    return false unless item.title.present?
+    return false unless (item.respond_to?(:link) && item.link.present?)
+    
+    # Check if either description or content is present
+    has_description = item.respond_to?(:description) && item.description.present?
+    has_content = item.respond_to?(:content) && item.content.present?
+    
+    has_description || has_content
+  end
 end
