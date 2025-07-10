@@ -11,7 +11,8 @@ class EnhancedNewsFetcher
   def initialize(options = {})
     @options = options
     @sources = options[:sources] || []
-    @summarizer = AiSummarizerService.new
+    @summarize = options.fetch(:summarize, true)  # Default to true for backward compatibility
+    @summarizer = @summarize ? AiSummarizerService.new : nil
   end
 
   def fetch_articles
@@ -28,7 +29,11 @@ class EnhancedNewsFetcher
           .first(ARTICLES_PER_SOURCE)
         
         source_articles = recent_entries.map do |entry|
-          fetch_from_rss_and_summarize(entry, source.name)
+          if @summarize
+            fetch_from_rss_and_summarize(entry, source.name)
+          else
+            fetch_from_rss_without_summarize(entry, source.name)
+          end
         end.compact
         
         if source_articles.present?
@@ -93,6 +98,32 @@ class EnhancedNewsFetcher
     {
       title: title,
       summary: summary || content || title, # Multiple fallbacks
+      url: url,
+      publish_date: publish_date,
+      source: source_name,
+      topic: entry.try(:categories)&.first
+    }
+  end
+  
+  # Fetch RSS entry without AI summarization (for memory optimization)
+  def fetch_from_rss_without_summarize(entry, source_name)
+    title = entry.title.strip
+    url = entry.url || entry.link
+    publish_date = entry.published || Time.current
+    
+    # Get content from RSS without full article fetch to save memory
+    content = [
+      entry.try(:content),
+      entry.try(:summary),
+      entry.try(:description),
+      entry.try(:title)
+    ].find { |c| c.present? }
+    
+    content = strip_html(content.to_s).to_s.gsub(/\s+/, ' ').strip
+    
+    {
+      title: title,
+      summary: content,  # Use raw content as summary
       url: url,
       publish_date: publish_date,
       source: source_name,

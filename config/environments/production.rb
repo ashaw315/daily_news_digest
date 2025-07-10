@@ -129,12 +129,12 @@ Rails.application.configure do
     def call(env)
       @request_count += 1
       
-      # Force garbage collection every 10 requests to prevent memory buildup
-      if (@request_count % 10).zero?
+      # Force garbage collection every 25 requests to prevent memory buildup
+      if (@request_count % 25).zero?
         GC.start
         
-        # Log memory usage every 50 requests for monitoring
-        if (@request_count % 50).zero?
+        # Log memory usage every 100 requests for monitoring
+        if (@request_count % 100).zero?
           begin
             rss_kb = `ps -o rss= -p #{Process.pid}`.to_i
             memory_mb = (rss_kb / 1024.0).round(2)

@@ -124,20 +124,29 @@ class Admin::NewsSourcesController < Admin::BaseController
     Rails.logger.info("PREVIEW START - Memory: #{initial_memory}MB")
     
     begin
-      # Use cached fetcher for speed with hard 3-article limit
-      fetcher = CachedEnhancedNewsFetcher.new(
+      # Force garbage collection before starting
+      GC.start
+      
+      # Use enhanced fetcher WITHOUT summarization to avoid double processing
+      fetcher = EnhancedNewsFetcher.new(
         sources: [@source],
-        max_articles: 3  # Hard limit enforced by fetcher
+        max_articles: 3,
+        summarize: false  # CRITICAL: Don't summarize during fetch
       )
       
-      # Fetch articles with caching
+      # Fetch articles without AI processing
       fetch_start_time = Time.current
       raw_articles = fetcher.fetch_articles || []
       fetch_duration = ((Time.current - fetch_start_time) * 1000).round(2)
       
       Rails.logger.info("PREVIEW: Fetched #{raw_articles.size} articles in #{fetch_duration}ms")
       
-      # Process articles in parallel with AI summaries
+      # Force garbage collection after fetch
+      GC.start
+      mid_memory = get_memory_usage_mb
+      Rails.logger.info("PREVIEW AFTER FETCH - Memory: #{mid_memory}MB")
+      
+      # Process articles in parallel with AI summaries (ONLY here)
       processing_start_time = Time.current
       processor = ParallelArticleProcessor.new
       @articles = processor.process_articles(raw_articles)

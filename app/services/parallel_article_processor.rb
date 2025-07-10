@@ -111,8 +111,8 @@ class ParallelArticleProcessor
       begin
         Rails.logger.info("PARALLEL: Starting article #{index + 1}")
         
-        # Use existing AI summarizer to maintain exact format and quality
-        summarizer = AiSummarizerService.new
+        # Use SHARED AI summarizer instance to reduce memory
+        summarizer = @@shared_summarizer ||= AiSummarizerService.new
         
         # Extract article data maintaining existing format
         processed_article = {
@@ -144,6 +144,11 @@ class ParallelArticleProcessor
         # Add processing metadata
         processing_time = ((Time.current - article_start_time) * 1000).round(2)
         processed_article[:processing_time_ms] = processing_time
+        
+        # Force memory cleanup after each article in production
+        if Rails.env.production?
+          GC.start
+        end
         
         Rails.logger.info("PARALLEL: Article #{index + 1} completed in #{processing_time}ms")
         processed_article
