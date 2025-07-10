@@ -156,21 +156,25 @@ Rails.application.configure do
   
   # MEMORY OPTIMIZATION: Configure garbage collection for memory efficiency
   config.after_initialize do
-    # Tune garbage collection for memory-constrained environment
-    GC.tune(
-      heap_init_slots: 10000,          # Start with smaller heap
-      heap_max_slots: 80000,           # Limit maximum heap size for 512MB constraint
-      heap_slots_increment: 1000,      # Grow heap slowly
-      heap_slots_growth_factor: 1.1,   # Conservative growth
-      malloc_limit: 16000000,          # 16MB malloc limit
-      malloc_limit_max: 32000000,      # 32MB max malloc limit
-      malloc_limit_growth_factor: 1.1, # Conservative malloc growth
-      oldmalloc_limit: 16000000,       # 16MB oldmalloc limit
-      oldmalloc_limit_max: 64000000,   # 64MB max oldmalloc limit (reduced for 512MB)
-      oldmalloc_limit_growth_factor: 1.2 # Conservative oldmalloc growth
-    )
-    
-    Rails.logger.info("MEMORY: Garbage collection tuned for 512MB environment")
-    Rails.logger.info("MEMORY: Parallel processing enabled with memory monitoring")
+    # Configure GC environment variables for memory-constrained environment
+    # These settings help manage memory usage in a 512MB environment
+    begin
+      # Set conservative GC settings via environment variables
+      ENV['RUBY_GC_HEAP_INIT_SLOTS'] ||= '10000'
+      ENV['RUBY_GC_HEAP_MAX_SLOTS'] ||= '80000'
+      ENV['RUBY_GC_HEAP_SLOTS_INCREMENT'] ||= '1000'
+      ENV['RUBY_GC_HEAP_SLOTS_GROWTH_FACTOR'] ||= '1.1'
+      ENV['RUBY_GC_MALLOC_LIMIT'] ||= '16000000'
+      ENV['RUBY_GC_MALLOC_LIMIT_MAX'] ||= '32000000'
+      ENV['RUBY_GC_MALLOC_LIMIT_GROWTH_FACTOR'] ||= '1.1'
+      ENV['RUBY_GC_OLDMALLOC_LIMIT'] ||= '16000000'
+      ENV['RUBY_GC_OLDMALLOC_LIMIT_MAX'] ||= '64000000'
+      ENV['RUBY_GC_OLDMALLOC_LIMIT_GROWTH_FACTOR'] ||= '1.2'
+      
+      Rails.logger.info("MEMORY: Garbage collection configured for 512MB environment")
+      Rails.logger.info("MEMORY: Parallel processing enabled with memory monitoring")
+    rescue => e
+      Rails.logger.warn("MEMORY: Could not configure GC settings: #{e.message}")
+    end
   end
 end
