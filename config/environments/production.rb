@@ -118,4 +118,59 @@ Rails.application.configure do
   # ]
   # Skip DNS rebinding protection for the default health check endpoint.
   # config.host_authorization = { exclude: ->(request) { request.path == "/up" } }
+  
+  # MEMORY OPTIMIZATION: Add middleware for periodic garbage collection
+  config.middleware.use(Class.new do
+    def initialize(app)
+      @app = app
+      @request_count = 0
+    end
+    
+    def call(env)
+      @request_count += 1
+      
+      # Force garbage collection every 10 requests to prevent memory buildup
+      if (@request_count % 10).zero?
+        GC.start
+        
+        # Log memory usage every 50 requests for monitoring
+        if (@request_count % 50).zero?
+          begin
+            rss_kb = `ps -o rss= -p #{Process.pid}`.to_i
+            memory_mb = (rss_kb / 1024.0).round(2)
+            Rails.logger.info("MEMORY MONITOR - Request #{@request_count}: #{memory_mb}MB")
+            
+            # Log warning if approaching memory limit
+            if memory_mb > 400
+              Rails.logger.warn("HIGH MEMORY WARNING: #{memory_mb}MB - approaching 512MB limit")
+            end
+          rescue => e
+            Rails.logger.error("Memory monitoring error: #{e.message}")
+          end
+        end
+      end
+      
+      @app.call(env)
+    end
+  end)
+  
+  # MEMORY OPTIMIZATION: Configure garbage collection for memory efficiency
+  config.after_initialize do
+    # Tune garbage collection for memory-constrained environment
+    GC.tune(
+      heap_init_slots: 10000,          # Start with smaller heap
+      heap_max_slots: 80000,           # Limit maximum heap size for 512MB constraint
+      heap_slots_increment: 1000,      # Grow heap slowly
+      heap_slots_growth_factor: 1.1,   # Conservative growth
+      malloc_limit: 16000000,          # 16MB malloc limit
+      malloc_limit_max: 32000000,      # 32MB max malloc limit
+      malloc_limit_growth_factor: 1.1, # Conservative malloc growth
+      oldmalloc_limit: 16000000,       # 16MB oldmalloc limit
+      oldmalloc_limit_max: 64000000,   # 64MB max oldmalloc limit (reduced for 512MB)
+      oldmalloc_limit_growth_factor: 1.2 # Conservative oldmalloc growth
+    )
+    
+    Rails.logger.info("MEMORY: Garbage collection tuned for 512MB environment")
+    Rails.logger.info("MEMORY: Parallel processing enabled with memory monitoring")
+  end
 end
