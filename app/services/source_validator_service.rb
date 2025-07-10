@@ -57,7 +57,15 @@ class SourceValidatorService
 
   def validate_rss_feed(body)
     begin
-      feed = Feedjira.parse(body)
+      # Make sure we're working with a string
+      raw_body = body.to_s
+      
+      feed = Feedjira.parse(raw_body)
+      
+      if feed.nil?
+        @errors << "Feedjira returned nil - not a valid feed"
+        return false
+      end
       
       if feed.entries.empty?
         @errors << "RSS feed contains no items"
