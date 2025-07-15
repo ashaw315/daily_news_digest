@@ -41,6 +41,7 @@ Rails.application.routes.draw do
     get 'dashboard', to: 'dashboard#index'
     get 'email_debug', to: 'dashboard#email_debug'
     get 'sendgrid_status', to: 'dashboard#check_sendgrid_status'
+    get 'email_test_suite', to: 'dashboard#email_test_suite'
 
     # Resources
     resources :topics

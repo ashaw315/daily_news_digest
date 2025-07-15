@@ -120,4 +120,149 @@ class Admin::DashboardController < Admin::BaseController
       format.json { render json: @sendgrid_status }
     end
   end
+  
+  def email_test_suite
+    @user = User.find_by(admin: true) || User.first
+    @test_results = []
+    
+    Rails.logger.info("[EMAIL_TEST] Starting comprehensive email test suite")
+    
+    # Test 1: Check SendGrid API connectivity
+    Rails.logger.info("[EMAIL_TEST] Test 1: SendGrid API connectivity")
+    sendgrid_test = test_sendgrid_api
+    @test_results << {
+      test: "SendGrid API Connectivity",
+      status: sendgrid_test[:success] ? "✅ PASS" : "❌ FAIL",
+      details: sendgrid_test
+    }
+    
+    # Test 2: Send simple email via SendGrid API
+    if @user && sendgrid_test[:success]
+      Rails.logger.info("[EMAIL_TEST] Test 2: Direct SendGrid API email")
+      api_email_test = send_test_email_via_api(@user)
+      @test_results << {
+        test: "SendGrid API Email",
+        status: api_email_test[:success] ? "✅ PASS" : "❌ FAIL", 
+        details: api_email_test
+      }
+    end
+    
+    # Test 3: Send email via Rails ActionMailer
+    if @user
+      Rails.logger.info("[EMAIL_TEST] Test 3: Rails ActionMailer email")
+      actionmailer_test = send_test_email_via_actionmailer(@user)
+      @test_results << {
+        test: "Rails ActionMailer Email",
+        status: actionmailer_test[:success] ? "✅ PASS" : "❌ FAIL",
+        details: actionmailer_test
+      }
+    end
+    
+    Rails.logger.info("[EMAIL_TEST] Test suite completed")
+  end
+  
+  private
+  
+  def test_sendgrid_api
+    return { success: false, error: "SendGrid API key not configured" } if ENV['SENDGRID_API_KEY'].blank?
+    
+    begin
+      require 'net/http'
+      require 'json'
+      
+      uri = URI('https://api.sendgrid.com/v3/user/profile')
+      http = Net::HTTP.new(uri.host, uri.port)
+      http.use_ssl = true
+      
+      request = Net::HTTP::Get.new(uri)
+      request['Authorization'] = "Bearer #{ENV['SENDGRID_API_KEY']}"
+      request['Content-Type'] = 'application/json'
+      
+      response = http.request(request)
+      
+      if response.code == '200'
+        profile_data = JSON.parse(response.body)
+        { success: true, email: profile_data['email'], username: profile_data['username'] }
+      else
+        { success: false, error: "API returned #{response.code}: #{response.body}" }
+      end
+    rescue => e
+      { success: false, error: e.message }
+    end
+  end
+  
+  def send_test_email_via_api(user)
+    begin
+      require 'net/http'
+      require 'json'
+      
+      email_data = {
+        personalizations: [{
+          to: [{ email: user.email }],
+          subject: "Test Email via SendGrid API - #{Time.current.strftime('%I:%M:%S %p')}"
+        }],
+        from: { email: ENV['EMAIL_FROM_ADDRESS'] || 'ashaw315@gmail.com' },
+        content: [{
+          type: 'text/html',
+          value: <<~HTML
+            <html>
+              <body>
+                <h2>✅ SendGrid API Test Email</h2>
+                <p><strong>Sent at:</strong> #{Time.current}</p>
+                <p><strong>Method:</strong> Direct SendGrid API call</p>
+                <p><strong>Status:</strong> If you see this, the SendGrid API is working!</p>
+              </body>
+            </html>
+          HTML
+        }]
+      }
+      
+      uri = URI('https://api.sendgrid.com/v3/mail/send')
+      http = Net::HTTP.new(uri.host, uri.port)
+      http.use_ssl = true
+      
+      request = Net::HTTP::Post.new(uri)
+      request['Authorization'] = "Bearer #{ENV['SENDGRID_API_KEY']}"
+      request['Content-Type'] = 'application/json'
+      request.body = email_data.to_json
+      
+      response = http.request(request)
+      
+      if response.code == '202'
+        { success: true, message: "Email sent successfully", response_code: response.code }
+      else
+        { success: false, error: "SendGrid API error: #{response.code} - #{response.body}" }
+      end
+    rescue => e
+      { success: false, error: e.message }
+    end
+  end
+  
+  def send_test_email_via_actionmailer(user)
+    begin
+      # Create simple test email
+      mail = ActionMailer::Base.mail(
+        to: user.email,
+        from: ENV['EMAIL_FROM_ADDRESS'] || 'ashaw315@gmail.com',
+        subject: "Test Email via ActionMailer - #{Time.current.strftime('%I:%M:%S %p')}",
+        body: <<~HTML
+          <html>
+            <body>
+              <h2>📧 ActionMailer Test Email</h2>
+              <p><strong>Sent at:</strong> #{Time.current}</p>
+              <p><strong>Method:</strong> Rails ActionMailer with SMTP</p>
+              <p><strong>Status:</strong> If you see this, ActionMailer is working!</p>
+            </body>
+          </html>
+        HTML
+      )
+      
+      mail.content_type = 'text/html'
+      result = mail.deliver_now
+      
+      { success: true, message: "Email sent via ActionMailer", result: result.class.name }
+    rescue => e
+      { success: false, error: e.message }
+    end
+  end
 end 

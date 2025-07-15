@@ -1,0 +1,201 @@
+<% content_for :title, "Email Test Suite" %>
+
+<div class="admin-content">
+  <div class="admin-header">
+    <h1>📧 Email Test Suite</h1>
+    <p>Comprehensive email delivery testing and diagnostics</p>
+  </div>
+
+  <div class="test-summary">
+    <div class="summary-card">
+      <h3>Test Results</h3>
+      <p><strong>Total Tests:</strong> <%= @test_results.size %></p>
+      <p><strong>Passed:</strong> <%= @test_results.count { |r| r[:status].include?('✅') } %></p>
+      <p><strong>Failed:</strong> <%= @test_results.count { |r| r[:status].include?('❌') } %></p>
+      <p><strong>User:</strong> <%= @user&.email || 'No user found' %></p>
+    </div>
+  </div>
+
+  <div class="test-results">
+    <% @test_results.each_with_index do |result, index| %>
+      <div class="test-result <%= result[:status].include?('✅') ? 'success' : 'failure' %>">
+        <h3>Test <%= index + 1 %>: <%= result[:test] %></h3>
+        <div class="test-status">
+          <span class="status-badge"><%= result[:status] %></span>
+        </div>
+        
+        <div class="test-details">
+          <h4>Details:</h4>
+          <% if result[:details].is_a?(Hash) %>
+            <% result[:details].each do |key, value| %>
+              <div class="detail-row">
+                <span class="detail-key"><%= key.to_s.humanize %>:</span>
+                <span class="detail-value"><%= value %></span>
+              </div>
+            <% end %>
+          <% else %>
+            <p><%= result[:details] %></p>
+          <% end %>
+        </div>
+      </div>
+    <% end %>
+  </div>
+
+  <div class="test-actions">
+    <a href="<%= admin_dashboard_path %>" class="btn btn-secondary">← Back to Dashboard</a>
+    <a href="<%= admin_email_test_suite_path %>" class="btn btn-primary">🔄 Run Tests Again</a>
+    <a href="<%= admin_email_debug_path %>" class="btn btn-info">📊 View Email Config</a>
+  </div>
+
+  <div class="test-instructions">
+    <h3>📋 What These Tests Do:</h3>
+    <ul>
+      <li><strong>SendGrid API Connectivity:</strong> Verifies your API key and connection</li>
+      <li><strong>SendGrid API Email:</strong> Sends test email directly via SendGrid API</li>
+      <li><strong>Rails ActionMailer Email:</strong> Sends test email via Rails SMTP</li>
+    </ul>
+    
+    <h3>🔍 Troubleshooting:</h3>
+    <ul>
+      <li>If all tests fail: Check SendGrid API key in environment variables</li>
+      <li>If API test passes but ActionMailer fails: Check SMTP configuration</li>
+      <li>If tests pass but you don't receive emails: Check spam folder and SendGrid dashboard</li>
+    </ul>
+  </div>
+</div>
+
+<style>
+  .test-summary {
+    margin-bottom: 30px;
+  }
+  
+  .summary-card {
+    background: #f8f9fa;
+    border: 1px solid #dee2e6;
+    border-radius: 8px;
+    padding: 20px;
+    max-width: 400px;
+  }
+  
+  .summary-card h3 {
+    margin-top: 0;
+    color: #495057;
+  }
+  
+  .test-results {
+    margin-bottom: 30px;
+  }
+  
+  .test-result {
+    background: white;
+    border: 1px solid #dee2e6;
+    border-radius: 8px;
+    padding: 20px;
+    margin-bottom: 20px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  }
+  
+  .test-result.success {
+    border-left: 4px solid #28a745;
+  }
+  
+  .test-result.failure {
+    border-left: 4px solid #dc3545;
+  }
+  
+  .test-result h3 {
+    margin-top: 0;
+    color: #495057;
+  }
+  
+  .test-status {
+    margin-bottom: 15px;
+  }
+  
+  .status-badge {
+    font-size: 1.1em;
+    font-weight: 600;
+    padding: 5px 10px;
+    border-radius: 4px;
+    background: #f8f9fa;
+  }
+  
+  .test-details {
+    background: #f8f9fa;
+    border-radius: 6px;
+    padding: 15px;
+  }
+  
+  .test-details h4 {
+    margin-top: 0;
+    margin-bottom: 10px;
+    color: #495057;
+  }
+  
+  .detail-row {
+    display: flex;
+    margin-bottom: 8px;
+    align-items: flex-start;
+  }
+  
+  .detail-key {
+    font-weight: 600;
+    min-width: 120px;
+    color: #495057;
+  }
+  
+  .detail-value {
+    flex: 1;
+    font-family: monospace;
+    font-size: 0.9em;
+    word-break: break-all;
+  }
+  
+  .test-actions {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 30px;
+    flex-wrap: wrap;
+  }
+  
+  .btn {
+    display: inline-block;
+    padding: 8px 16px;
+    background: #007bff;
+    color: white;
+    text-decoration: none;
+    border-radius: 4px;
+    font-size: 0.9rem;
+  }
+  
+  .btn-secondary {
+    background: #6c757d;
+  }
+  
+  .btn-info {
+    background: #17a2b8;
+  }
+  
+  .btn:hover {
+    opacity: 0.9;
+  }
+  
+  .test-instructions {
+    background: #e9ecef;
+    border-radius: 8px;
+    padding: 20px;
+  }
+  
+  .test-instructions h3 {
+    color: #495057;
+    margin-top: 0;
+  }
+  
+  .test-instructions ul {
+    padding-left: 20px;
+  }
+  
+  .test-instructions li {
+    margin-bottom: 8px;
+  }
+</style>
