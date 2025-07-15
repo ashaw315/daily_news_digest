@@ -11,7 +11,7 @@ class DailyNewsMailer < ApplicationMailer
     # Memory-safe article processing
     if articles.present?
       # Convert to standardized format and limit count
-      @articles = normalize_articles(articles).take(15)  # Hard limit for email size
+      @articles = normalize_articles(articles).take(30)  # Hard limit for email size (10 sources × 3 articles)
       
       Rails.logger.info("[DailyNewsMailer] Processing #{@articles.size} articles for #{@user.email}")
       
