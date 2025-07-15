@@ -48,6 +48,9 @@ class Admin::UsersController < Admin::BaseController
     Rails.logger.info("[ADMIN] Creating email with DailyNewsMailer...")
     mail = DailyNewsMailer.daily_digest(user, articles)
     Rails.logger.info("[ADMIN] Email created, attempting delivery...")
+    Rails.logger.info("[ADMIN] Email FROM address: #{mail.from}")
+    Rails.logger.info("[ADMIN] Email TO address: #{mail.to}")
+    Rails.logger.info("[ADMIN] Email subject: #{mail.subject}")
     
     # Try to deliver and log the result
     delivery_result = mail.deliver_now

@@ -1,5 +1,5 @@
 class ApplicationMailer < ActionMailer::Base
-  default from: "ashaw315@gmail.com"  # Use your verified SendGrid sender email
+  default from: ENV['EMAIL_FROM_ADDRESS'] || "ashaw315@gmail.com"  # Use verified SendGrid sender email
   layout "mailer"
   
   # Include the MailerHelper

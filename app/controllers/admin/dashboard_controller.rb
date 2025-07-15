@@ -36,7 +36,8 @@ class Admin::DashboardController < Admin::BaseController
     @env_vars = {
       sendgrid_api_key_present: ENV['SENDGRID_API_KEY'].present?,
       sendgrid_api_key_length: ENV['SENDGRID_API_KEY']&.length,
-      sendgrid_api_key_prefix: ENV['SENDGRID_API_KEY']&.slice(0, 10)
+      sendgrid_api_key_prefix: ENV['SENDGRID_API_KEY']&.slice(0, 10),
+      email_from_address: ENV['EMAIL_FROM_ADDRESS'] || "ashaw315@gmail.com"
     }
     
     # Test email creation
