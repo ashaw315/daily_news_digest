@@ -2,6 +2,8 @@
 <html>
 <head>
   <meta content='text/html; charset=UTF-8' http-equiv='Content-Type' />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Your Daily News Digest</title>
   <style>
     body {
       font-family: Arial, sans-serif;
@@ -112,7 +114,11 @@
       <a href="<%= edit_preferences_url %>">Manage Preferences</a> | 
       <a href="<%= unsubscribe_url(token: @user.unsubscribe_token) %>">Unsubscribe</a>
     </p>
-    <p>© <%= Date.today.year %> Your News App. All rights reserved.</p>
+    <p>© <%= Date.today.year %> Daily News Digest. All rights reserved.</p>
+    <p style="font-size: 11px; color: #888;">
+      You received this email because you subscribed to Daily News Digest. 
+      This email was sent by Daily News Digest.
+    </p>
   </div>
 </body>
 </html>

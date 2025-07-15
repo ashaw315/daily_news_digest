@@ -32,7 +32,8 @@ class DailyNewsMailer < ApplicationMailer
   
     mail(
       to: @user.email,
-      subject: "Your Daily News Digest - #{Date.today.strftime('%B %d, %Y')}"
+      subject: "Your Daily News Digest - #{Date.today.strftime('%B %d, %Y')}",
+      reply_to: ENV['EMAIL_FROM_ADDRESS'] || 'ashaw315@gmail.com'
     )
   end
 
