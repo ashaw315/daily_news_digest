@@ -40,12 +40,14 @@ Rails.application.routes.draw do
     # Dashboard
     get 'dashboard', to: 'dashboard#index'
     get 'email_debug', to: 'dashboard#email_debug'
+    get 'sendgrid_status', to: 'dashboard#check_sendgrid_status'
 
     # Resources
     resources :topics
     
     resources :users, only: [:index, :show, :destroy] do
       post :send_test_email, on: :member
+      post :send_simple_test_email, on: :member
     end
     
     resources :email_metrics, only: [:index]

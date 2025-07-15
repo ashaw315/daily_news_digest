@@ -34,9 +34,10 @@
         <p><strong>Unsubscribe Token:</strong> <%= @user.unsubscribe_token %></p>
       </div>
     </div>
-    <div style="margin-top: 20px; display: flex; gap: 10px;">
+    <div style="margin-top: 20px; display: flex; gap: 10px; flex-wrap: wrap;">
       <%= link_to 'Back to Users', admin_users_path, class: 'admin-btn admin-btn-secondary' %>
       <%= button_to 'Send Test Email', send_test_email_admin_user_path(@user), method: :post, class: 'admin-btn', data: { confirm: "Send a test newsletter to #{@user.email}?" } %>
+      <%= button_to 'Send Simple Test', send_simple_test_email_admin_user_path(@user), method: :post, class: 'admin-btn admin-btn-warning', data: { confirm: "Send a simple test email via SendGrid API to #{@user.email}?" } %>
     </div>
   </div>
 

@@ -64,4 +64,60 @@ class Admin::DashboardController < Admin::BaseController
     
     Rails.logger.info("[EMAIL_DEBUG] Email debug complete")
   end
+  
+  def check_sendgrid_status
+    Rails.logger.info("[SENDGRID] Checking SendGrid API status")
+    
+    if ENV['SENDGRID_API_KEY'].blank?
+      @sendgrid_status = { error: "SendGrid API key not configured" }
+      return
+    end
+    
+    begin
+      # Simple API test to verify SendGrid connectivity
+      require 'net/http'
+      require 'json'
+      
+      uri = URI('https://api.sendgrid.com/v3/user/profile')
+      http = Net::HTTP.new(uri.host, uri.port)
+      http.use_ssl = true
+      
+      request = Net::HTTP::Get.new(uri)
+      request['Authorization'] = "Bearer #{ENV['SENDGRID_API_KEY']}"
+      request['Content-Type'] = 'application/json'
+      
+      response = http.request(request)
+      
+      if response.code == '200'
+        profile_data = JSON.parse(response.body)
+        @sendgrid_status = {
+          success: true,
+          email: profile_data['email'],
+          username: profile_data['username'],
+          response_code: response.code
+        }
+        Rails.logger.info("[SENDGRID] API check successful")
+      else
+        @sendgrid_status = {
+          success: false,
+          error: "API returned #{response.code}: #{response.body}",
+          response_code: response.code
+        }
+        Rails.logger.error("[SENDGRID] API check failed: #{response.code}")
+      end
+      
+    rescue => e
+      Rails.logger.error("[SENDGRID] API check error: #{e.message}")
+      @sendgrid_status = {
+        success: false,
+        error: e.message,
+        error_class: e.class.name
+      }
+    end
+    
+    respond_to do |format|
+      format.html { render json: @sendgrid_status }
+      format.json { render json: @sendgrid_status }
+    end
+  end
 end 

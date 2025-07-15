@@ -73,6 +73,68 @@ class Admin::UsersController < Admin::BaseController
       end
     end
   end
+  
+  def send_simple_test_email
+    user = User.find(params[:id])
+    Rails.logger.info("[ADMIN] Sending simple test email via SendGrid API")
+    
+    begin
+      # Use SendGrid API directly instead of SMTP
+      require 'net/http'
+      require 'json'
+      
+      if ENV['SENDGRID_API_KEY'].blank?
+        raise "SendGrid API key not configured"
+      end
+      
+      # Create simple email payload
+      email_data = {
+        personalizations: [{
+          to: [{ email: user.email }],
+          subject: "Simple Test Email - #{Time.current.strftime('%B %d, %Y at %I:%M %p')}"
+        }],
+        from: { email: ENV['EMAIL_FROM_ADDRESS'] || 'ashaw315@gmail.com' },
+        content: [{
+          type: 'text/html',
+          value: <<~HTML
+            <html>
+              <body>
+                <h1>Test Email</h1>
+                <p>This is a simple test email sent directly via SendGrid API at #{Time.current}.</p>
+                <p>If you receive this, your SendGrid integration is working correctly!</p>
+              </body>
+            </html>
+          HTML
+        }]
+      }
+      
+      # Send via SendGrid API
+      uri = URI('https://api.sendgrid.com/v3/mail/send')
+      http = Net::HTTP.new(uri.host, uri.port)
+      http.use_ssl = true
+      
+      request = Net::HTTP::Post.new(uri)
+      request['Authorization'] = "Bearer #{ENV['SENDGRID_API_KEY']}"
+      request['Content-Type'] = 'application/json'
+      request.body = email_data.to_json
+      
+      response = http.request(request)
+      
+      Rails.logger.info("[ADMIN] SendGrid API response: #{response.code} - #{response.body}")
+      
+      if response.code == '202'
+        Rails.logger.info("[ADMIN] Simple test email sent successfully via API")
+        redirect_to admin_user_path(user), notice: "Simple test email sent successfully via SendGrid API to #{user.email}"
+      else
+        Rails.logger.error("[ADMIN] SendGrid API error: #{response.code} - #{response.body}")
+        redirect_to admin_user_path(user), alert: "SendGrid API error: #{response.code} - #{response.body}"
+      end
+      
+    rescue => e
+      Rails.logger.error("[ADMIN] Simple test email failed: #{e.class} - #{e.message}")
+      redirect_to admin_user_path(user), alert: "Failed to send simple test email: #{e.message}"
+    end
+  end
 
   private
   
