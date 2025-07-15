@@ -36,20 +36,9 @@ class Admin::UsersController < Admin::BaseController
       sources = user.news_sources
       Rails.logger.info("[ADMIN] User has #{sources.count} subscribed news sources")
       
-      # Fetch latest articles
-      fetcher = EnhancedNewsFetcher.new(sources: sources, max_articles: 3)
-      Rails.logger.info("[ADMIN] Fetching articles from sources...")
-      fetcher.fetch_articles
-      
-      # Get exactly 3 articles per source for email
-      articles = []
-      sources.each do |source|
-        source_articles = Article.where(news_source: source)
-                                .order(publish_date: :desc)
-                                .limit(3)
-        articles.concat(source_articles)
-        Rails.logger.info("[ADMIN] Found #{source_articles.count} articles from #{source.name}")
-      end
+      # Use ArticleFetcher for consistent per-source article fetching
+      Rails.logger.info("[ADMIN] Fetching articles using ArticleFetcher...")
+      articles = ArticleFetcher.fetch_for_user(user)
       Rails.logger.info("[ADMIN] Total articles for email: #{articles.count} from #{sources.count} sources")
       
       # Create and send email
