@@ -1,7 +1,7 @@
 class ArticleFetcher
   # Memory-optimized limits for 512MB environment
   MAX_SOURCES_PER_USER = 10        # Reduced from 15
-  MAX_ARTICLES_PER_USER = 15       # Reduced from 50
+  MAX_ARTICLES_PER_USER = 30       # 3 articles per source × 10 sources
   MEMORY_THRESHOLD_MB = 400        # Alert threshold
   
   def self.fetch_for_user(user, days: 1)
