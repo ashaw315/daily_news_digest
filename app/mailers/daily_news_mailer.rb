@@ -111,8 +111,8 @@ class DailyNewsMailer < ApplicationMailer
         }
       end
       
-      # Truncate summary to prevent large emails
-      normalized[:summary] = normalized[:summary].to_s[0..500] + '...' if normalized[:summary].to_s.length > 500
+      # Truncate summary only if extremely long to prevent large emails
+      normalized[:summary] = normalized[:summary].to_s[0..1500] + '...' if normalized[:summary].to_s.length > 1500
       normalized
     end
   end
