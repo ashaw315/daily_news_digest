@@ -39,6 +39,7 @@ Rails.application.routes.draw do
 
     # Dashboard
     get 'dashboard', to: 'dashboard#index'
+    get 'email_debug', to: 'dashboard#email_debug'
 
     # Resources
     resources :topics

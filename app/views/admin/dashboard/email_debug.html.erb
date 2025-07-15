@@ -1,0 +1,312 @@
+<% content_for :title, "Email Debug" %>
+
+<div class="admin-content">
+  <div class="admin-header">
+    <h1>Email Configuration Debug</h1>
+    <p>Diagnostic information for email delivery troubleshooting</p>
+  </div>
+
+  <div class="debug-section">
+    <h2>📧 Email Configuration</h2>
+    <div class="debug-info">
+      <div class="info-row">
+        <span class="label">Environment:</span>
+        <span class="value"><%= @email_config[:environment] %></span>
+      </div>
+      <div class="info-row">
+        <span class="label">Delivery Method:</span>
+        <span class="value status-<%= @email_config[:delivery_method] == :smtp ? 'good' : 'warning' %>">
+          <%= @email_config[:delivery_method] %>
+          <% if @email_config[:delivery_method] != :smtp %>
+            <span class="warning">⚠️ Should be 'smtp' for production</span>
+          <% end %>
+        </span>
+      </div>
+      <div class="info-row">
+        <span class="label">Perform Deliveries:</span>
+        <span class="value status-<%= @email_config[:perform_deliveries] ? 'good' : 'bad' %>">
+          <%= @email_config[:perform_deliveries] %>
+        </span>
+      </div>
+      <div class="info-row">
+        <span class="label">Raise Delivery Errors:</span>
+        <span class="value status-<%= @email_config[:raise_delivery_errors] ? 'good' : 'warning' %>">
+          <%= @email_config[:raise_delivery_errors] %>
+        </span>
+      </div>
+    </div>
+  </div>
+
+  <% if @smtp_config %>
+    <div class="debug-section">
+      <h2>📨 SMTP Configuration</h2>
+      <div class="debug-info">
+        <div class="info-row">
+          <span class="label">Address:</span>
+          <span class="value"><%= @smtp_config[:address] %></span>
+        </div>
+        <div class="info-row">
+          <span class="label">Port:</span>
+          <span class="value"><%= @smtp_config[:port] %></span>
+        </div>
+        <div class="info-row">
+          <span class="label">Domain:</span>
+          <span class="value"><%= @smtp_config[:domain] %></span>
+        </div>
+        <div class="info-row">
+          <span class="label">User Name:</span>
+          <span class="value"><%= @smtp_config[:user_name] %></span>
+        </div>
+        <div class="info-row">
+          <span class="label">Password Present:</span>
+          <span class="value status-<%= @smtp_config[:password_present] ? 'good' : 'bad' %>">
+            <%= @smtp_config[:password_present] %>
+            <% unless @smtp_config[:password_present] %>
+              <span class="error">❌ Missing password/API key</span>
+            <% end %>
+          </span>
+        </div>
+        <div class="info-row">
+          <span class="label">Authentication:</span>
+          <span class="value"><%= @smtp_config[:authentication] %></span>
+        </div>
+        <div class="info-row">
+          <span class="label">STARTTLS:</span>
+          <span class="value"><%= @smtp_config[:starttls] %></span>
+        </div>
+      </div>
+    </div>
+  <% end %>
+
+  <div class="debug-section">
+    <h2>🔑 Environment Variables</h2>
+    <div class="debug-info">
+      <div class="info-row">
+        <span class="label">SendGrid API Key Present:</span>
+        <span class="value status-<%= @env_vars[:sendgrid_api_key_present] ? 'good' : 'bad' %>">
+          <%= @env_vars[:sendgrid_api_key_present] %>
+          <% unless @env_vars[:sendgrid_api_key_present] %>
+            <span class="error">❌ SENDGRID_API_KEY environment variable missing</span>
+          <% end %>
+        </span>
+      </div>
+      <% if @env_vars[:sendgrid_api_key_present] %>
+        <div class="info-row">
+          <span class="label">API Key Length:</span>
+          <span class="value"><%= @env_vars[:sendgrid_api_key_length] %> characters</span>
+        </div>
+        <div class="info-row">
+          <span class="label">API Key Prefix:</span>
+          <span class="value"><%= @env_vars[:sendgrid_api_key_prefix] %>...</span>
+        </div>
+      <% end %>
+    </div>
+  </div>
+
+  <div class="debug-section">
+    <h2>✉️ Email Creation Test</h2>
+    <div class="debug-info">
+      <% if @test_email_result[:success] %>
+        <div class="success-message">
+          <h3>✅ Email Creation Successful</h3>
+          <div class="info-row">
+            <span class="label">Subject:</span>
+            <span class="value"><%= @test_email_result[:subject] %></span>
+          </div>
+          <div class="info-row">
+            <span class="label">From:</span>
+            <span class="value"><%= @test_email_result[:from] %></span>
+          </div>
+          <div class="info-row">
+            <span class="label">To:</span>
+            <span class="value"><%= @test_email_result[:to] %></span>
+          </div>
+          <div class="info-row">
+            <span class="label">Content Type:</span>
+            <span class="value"><%= @test_email_result[:content_type] %></span>
+          </div>
+        </div>
+      <% else %>
+        <div class="error-message">
+          <h3>❌ Email Creation Failed</h3>
+          <div class="info-row">
+            <span class="label">Error:</span>
+            <span class="value error"><%= @test_email_result[:error] %></span>
+          </div>
+          <% if @test_email_result[:backtrace] %>
+            <div class="info-row">
+              <span class="label">Backtrace:</span>
+              <div class="value">
+                <% @test_email_result[:backtrace].each do |line| %>
+                  <div class="backtrace-line"><%= line %></div>
+                <% end %>
+              </div>
+            </div>
+          <% end %>
+        </div>
+      <% end %>
+    </div>
+  </div>
+
+  <div class="debug-section">
+    <h2>🔧 Next Steps</h2>
+    <div class="debug-info">
+      <% if @email_config[:delivery_method] != :smtp %>
+        <div class="action-item error">
+          <strong>❌ Fix delivery method:</strong> Change from '<%= @email_config[:delivery_method] %>' to 'smtp' in production.rb
+        </div>
+      <% end %>
+      
+      <% unless @env_vars[:sendgrid_api_key_present] %>
+        <div class="action-item error">
+          <strong>❌ Set SendGrid API Key:</strong> Add SENDGRID_API_KEY environment variable in Render
+        </div>
+      <% end %>
+      
+      <% if @email_config[:delivery_method] == :smtp && @env_vars[:sendgrid_api_key_present] %>
+        <div class="action-item success">
+          <strong>✅ Configuration looks good!</strong> Try sending a test email.
+        </div>
+      <% end %>
+    </div>
+  </div>
+
+  <div class="debug-actions">
+    <a href="<%= admin_dashboard_path %>" class="btn btn-secondary">← Back to Dashboard</a>
+    <a href="<%= admin_email_debug_path %>" class="btn btn-primary">🔄 Refresh Debug Info</a>
+  </div>
+</div>
+
+<style>
+  .debug-section {
+    background: #f8f9fa;
+    border: 1px solid #dee2e6;
+    border-radius: 8px;
+    padding: 20px;
+    margin-bottom: 20px;
+  }
+  
+  .debug-section h2 {
+    margin-top: 0;
+    color: #495057;
+    font-size: 1.25rem;
+  }
+  
+  .debug-info {
+    background: white;
+    padding: 15px;
+    border-radius: 6px;
+    border: 1px solid #e9ecef;
+  }
+  
+  .info-row {
+    display: flex;
+    margin-bottom: 8px;
+    align-items: flex-start;
+  }
+  
+  .info-row .label {
+    font-weight: 600;
+    min-width: 160px;
+    color: #495057;
+  }
+  
+  .info-row .value {
+    flex: 1;
+    font-family: monospace;
+    font-size: 0.9rem;
+  }
+  
+  .status-good {
+    color: #28a745;
+    font-weight: 600;
+  }
+  
+  .status-warning {
+    color: #ffc107;
+    font-weight: 600;
+  }
+  
+  .status-bad {
+    color: #dc3545;
+    font-weight: 600;
+  }
+  
+  .warning {
+    color: #ffc107;
+    font-size: 0.85rem;
+    margin-left: 10px;
+  }
+  
+  .error {
+    color: #dc3545;
+    font-size: 0.85rem;
+    margin-left: 10px;
+  }
+  
+  .success-message {
+    background: #d4edda;
+    border: 1px solid #c3e6cb;
+    color: #155724;
+    padding: 15px;
+    border-radius: 6px;
+  }
+  
+  .error-message {
+    background: #f8d7da;
+    border: 1px solid #f5c6cb;
+    color: #721c24;
+    padding: 15px;
+    border-radius: 6px;
+  }
+  
+  .action-item {
+    padding: 10px 15px;
+    margin-bottom: 10px;
+    border-radius: 6px;
+    border-left: 4px solid;
+  }
+  
+  .action-item.error {
+    background: #f8d7da;
+    border-left-color: #dc3545;
+    color: #721c24;
+  }
+  
+  .action-item.success {
+    background: #d4edda;
+    border-left-color: #28a745;
+    color: #155724;
+  }
+  
+  .backtrace-line {
+    font-family: monospace;
+    font-size: 0.8rem;
+    color: #6c757d;
+    margin: 2px 0;
+  }
+  
+  .debug-actions {
+    display: flex;
+    gap: 10px;
+    margin-top: 20px;
+  }
+  
+  .btn {
+    display: inline-block;
+    padding: 8px 16px;
+    background: #007bff;
+    color: white;
+    text-decoration: none;
+    border-radius: 4px;
+    font-size: 0.9rem;
+  }
+  
+  .btn-secondary {
+    background: #6c757d;
+  }
+  
+  .btn:hover {
+    opacity: 0.9;
+  }
+</style>
