@@ -240,27 +240,14 @@ class Admin::DashboardController < Admin::BaseController
   
   def send_test_email_via_actionmailer(user)
     begin
-      # Create simple test email
-      mail = ActionMailer::Base.mail(
-        to: user.email,
-        from: ENV['EMAIL_FROM_ADDRESS'] || 'ashaw315@gmail.com',
-        subject: "Test Email via ActionMailer - #{Time.current.strftime('%I:%M:%S %p')}",
-        body: <<~HTML
-          <html>
-            <body>
-              <h2>📧 ActionMailer Test Email</h2>
-              <p><strong>Sent at:</strong> #{Time.current}</p>
-              <p><strong>Method:</strong> Rails ActionMailer with SMTP</p>
-              <p><strong>Status:</strong> If you see this, ActionMailer is working!</p>
-            </body>
-          </html>
-        HTML
-      )
+      # Use the same logic as the daily email job for consistency
+      articles = ArticleFetcher.fetch_for_user(user)
       
-      mail.content_type = 'text/html'
+      # Create daily digest email
+      mail = DailyNewsMailer.daily_digest(user, articles)
       result = mail.deliver_now
       
-      { success: true, message: "Email sent via ActionMailer", result: result.class.name }
+      { success: true, message: "Daily digest email sent via ActionMailer", result: result.class.name, articles_count: articles.size }
     rescue => e
       { success: false, error: e.message }
     end

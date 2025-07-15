@@ -39,8 +39,11 @@ class ArticleFetcher
       post_fetch_memory = get_memory_usage_mb
       Rails.logger.info("[ArticleFetcher] Completed for user #{user.id} - Memory: #{start_memory}MB → #{post_fetch_memory}MB")
       
-      # Limit final result size
-      articles.take(MAX_ARTICLES_PER_USER)
+      # Get exactly 3 articles per source (instead of limiting total)
+      articles_per_source = get_articles_per_source(sources)
+      Rails.logger.info("[ArticleFetcher] Retrieved #{articles_per_source.sum(&:size)} articles from #{sources.size} sources")
+      
+      articles_per_source.flatten
       
     rescue => e
       Rails.logger.error("[ArticleFetcher] Error for user #{user.id}: #{e.message}")
@@ -49,6 +52,23 @@ class ArticleFetcher
   end
   
   private
+  
+  def self.get_articles_per_source(sources)
+    articles_per_source = []
+    
+    sources.each do |source|
+      # Get exactly 3 most recent articles from this source
+      source_articles = Article.where(news_source: source)
+                              .order(publish_date: :desc)
+                              .limit(3)
+                              .to_a
+      
+      Rails.logger.info("[ArticleFetcher] Source #{source.name}: #{source_articles.size} articles")
+      articles_per_source << source_articles
+    end
+    
+    articles_per_source
+  end
   
   def self.get_memory_usage_mb
     rss_kb = `ps -o rss= -p #{Process.pid}`.to_i

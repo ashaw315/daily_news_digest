@@ -41,9 +41,16 @@ class Admin::UsersController < Admin::BaseController
       Rails.logger.info("[ADMIN] Fetching articles from sources...")
       fetcher.fetch_articles
       
-      # Get articles for email
-      articles = Article.where(news_source: sources).order(publish_date: :desc).limit(20)
-      Rails.logger.info("[ADMIN] Found #{articles.count} articles for email")
+      # Get exactly 3 articles per source for email
+      articles = []
+      sources.each do |source|
+        source_articles = Article.where(news_source: source)
+                                .order(publish_date: :desc)
+                                .limit(3)
+        articles.concat(source_articles)
+        Rails.logger.info("[ADMIN] Found #{source_articles.count} articles from #{source.name}")
+      end
+      Rails.logger.info("[ADMIN] Total articles for email: #{articles.count} from #{sources.count} sources")
       
       # Create and send email
       Rails.logger.info("[ADMIN] Creating email with DailyNewsMailer...")
