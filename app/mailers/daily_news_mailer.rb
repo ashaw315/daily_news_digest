@@ -1,5 +1,5 @@
 class DailyNewsMailer < ApplicationMailer
-  default from: "news@dailynewsdigest.com"
+  default from: "ashaw315@gmail.com"  # Use your verified SendGrid sender email
   helper MailerHelper
 
   def daily_digest(user, articles)
