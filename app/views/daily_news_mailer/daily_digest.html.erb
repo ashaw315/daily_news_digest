@@ -81,15 +81,15 @@
           
           <% articles.each do |article| %>
             <div class="article">
-              <div class="article-title"><%= article.title %></div>
+              <div class="article-title"><%= article[:title] %></div>
               <div class="article-summary">
-                <% puts "Summary for #{article.title}: #{article.summary&.length || 0} characters" %>
+                <% puts "Summary for #{article[:title]}: #{article[:summary]&.length || 0} characters" %>
                 <%= article_summary(article) %>
               </div>
               <div class="article-meta">
                 <%= article_source(article) %> | <%= article_date(article) %>
               </div>
-              <a href="<%= article.url %>" class="read-more">Read More</a>
+              <a href="<%= article[:url] %>" class="read-more">Read More</a>
             </div>
           <% end %>
         </div>

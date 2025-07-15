@@ -27,14 +27,16 @@ RSpec.describe DailyNewsMailer, type: :mailer do
           summary: 'Summary for tech news 1',
           url: 'https://example.com/tech1',
           publish_date: 1.day.ago,
-          news_source: tech_source
+          news_source: tech_source,
+          source: tech_source.name  # Explicitly set source name
         ),
         create(:article,
           title: 'Sports News 1',
           summary: 'Summary for sports news 1',
           url: 'https://example.com/sports1',
           publish_date: 2.days.ago,
-          news_source: sports_source
+          news_source: sports_source,
+          source: sports_source.name  # Explicitly set source name
         )
       ]
     end

@@ -25,6 +25,12 @@ RSpec.describe DailyEmailJob, type: :job do
     
     # Mock the ArticleFetcher
     allow(ArticleFetcher).to receive(:fetch_for_user).and_return(articles)
+    
+    # Mock the ParallelArticleProcessor to pass through articles unchanged
+    mock_processor = double("ParallelArticleProcessor")
+    allow(mock_processor).to receive(:process_articles).and_return(articles)
+    allow(mock_processor).to receive(:errors).and_return([])
+    allow(ParallelArticleProcessor).to receive(:new).and_return(mock_processor)
   end
   
   let(:articles) { [double('Article', title: 'Test', description: 'Test', source: 'Test', url: 'http://test.com', published_at: Time.now, topic: 'technology')] }

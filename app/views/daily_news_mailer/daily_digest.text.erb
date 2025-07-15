@@ -8,10 +8,10 @@ Here's your personalized news digest based on your selected news sources.
 <% @sorted_topics.each do |topic| %>
 <%= topic.upcase %> NEWS:
 <% @articles_by_topic[topic].each do |article| %>
-- <%= article.title %> (<%= article_source(article) %>)
+- <%= article[:title] %> (<%= article_source(article) %>)
   <%= article_summary(article) %>
   <%= article_date(article) %>
-  Read more: <%= article.url %>
+  Read more: <%= article[:url] %>
 <% end %>
 <% end %>
 <% end %>

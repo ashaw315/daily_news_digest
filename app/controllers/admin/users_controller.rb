@@ -2,7 +2,8 @@ class Admin::UsersController < Admin::BaseController
   before_action :set_user, only: [:show, :destroy]
   
   def index
-    @users = User.all
+    # Add pagination to prevent memory issues with kaminari
+    @users = User.includes(:preferences).page(params[:page]).per(25)
   end
   
   def show

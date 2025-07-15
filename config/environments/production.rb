@@ -159,20 +159,29 @@ Rails.application.configure do
     # Configure GC environment variables for memory-constrained environment
     # These settings help manage memory usage in a 512MB environment
     begin
-      # Set conservative GC settings via environment variables
-      ENV['RUBY_GC_HEAP_INIT_SLOTS'] ||= '10000'
-      ENV['RUBY_GC_HEAP_MAX_SLOTS'] ||= '80000'
-      ENV['RUBY_GC_HEAP_SLOTS_INCREMENT'] ||= '1000'
-      ENV['RUBY_GC_HEAP_SLOTS_GROWTH_FACTOR'] ||= '1.1'
-      ENV['RUBY_GC_MALLOC_LIMIT'] ||= '16000000'
-      ENV['RUBY_GC_MALLOC_LIMIT_MAX'] ||= '32000000'
-      ENV['RUBY_GC_MALLOC_LIMIT_GROWTH_FACTOR'] ||= '1.1'
-      ENV['RUBY_GC_OLDMALLOC_LIMIT'] ||= '16000000'
-      ENV['RUBY_GC_OLDMALLOC_LIMIT_MAX'] ||= '64000000'
-      ENV['RUBY_GC_OLDMALLOC_LIMIT_GROWTH_FACTOR'] ||= '1.2'
+      # More aggressive GC settings for daily digest processing
+      ENV['RUBY_GC_HEAP_INIT_SLOTS'] ||= '8000'      # Smaller initial heap
+      ENV['RUBY_GC_HEAP_MAX_SLOTS'] ||= '60000'      # Lower max heap for 512MB
+      ENV['RUBY_GC_HEAP_SLOTS_INCREMENT'] ||= '800'  # Smaller increments
+      ENV['RUBY_GC_HEAP_SLOTS_GROWTH_FACTOR'] ||= '1.05'  # Slower growth
+      ENV['RUBY_GC_MALLOC_LIMIT'] ||= '12000000'     # 12MB malloc limit
+      ENV['RUBY_GC_MALLOC_LIMIT_MAX'] ||= '24000000' # 24MB max malloc
+      ENV['RUBY_GC_MALLOC_LIMIT_GROWTH_FACTOR'] ||= '1.05'  # Conservative growth
+      ENV['RUBY_GC_OLDMALLOC_LIMIT'] ||= '12000000'  # 12MB old malloc limit
+      ENV['RUBY_GC_OLDMALLOC_LIMIT_MAX'] ||= '48000000'  # 48MB max old malloc
+      ENV['RUBY_GC_OLDMALLOC_LIMIT_GROWTH_FACTOR'] ||= '1.1'  # Conservative growth
       
-      Rails.logger.info("MEMORY: Garbage collection configured for 512MB environment")
-      Rails.logger.info("MEMORY: Parallel processing enabled with memory monitoring")
+      # Enable more frequent GC for long-running processes
+      ENV['RUBY_GC_HEAP_FREE_SLOTS'] ||= '500'       # More free slots before GC
+      ENV['RUBY_GC_HEAP_OLDOBJECT_LIMIT_FACTOR'] ||= '1.2'  # More aggressive old object collection
+      
+      Rails.logger.info("MEMORY: Aggressive GC configured for daily digest processing")
+      Rails.logger.info("MEMORY: Heap settings optimized for 512MB constraint")
+      
+      # Log initial memory state
+      require_relative '../../app/services/memory_monitor'
+      MemoryMonitor.log_report("Initial Memory State")
+      
     rescue => e
       Rails.logger.warn("MEMORY: Could not configure GC settings: #{e.message}")
     end

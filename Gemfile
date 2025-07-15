@@ -63,10 +63,10 @@ gem 'ruby-readability'
 
 # Text processing and categorization
 gem 'stopwords-filter', require: 'stopwords'        # For removing stopwords
-gem 'classifier-reborn'       # For text classification
 gem 'ruby-openai'
 
-gem 'webdrivers'
+# Pagination for memory optimization
+gem 'kaminari'
 
 group :development, :test do
   # See https://guides.rubyonrails.org/debugging_rails_applications.html#debugging-with-the-debug-gem
@@ -98,5 +98,10 @@ group :test do
   gem "database_cleaner-active_record"
   gem "rails-controller-testing"
   gem "webmock"
+  gem 'webdrivers'  # Moved from production to test-only
+end
+
+group :development do
+  gem 'classifier-reborn'  # Moved from production - only needed for development
 end
 

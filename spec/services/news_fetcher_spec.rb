@@ -128,7 +128,14 @@ RSpec.describe EnhancedNewsFetcher, type: :service do
     end
     
     before do
-      allow(URI).to receive(:open).and_return(double(read: html_content))
+      # Mock URI.open to handle both block and non-block calls
+      allow(URI).to receive(:open) do |url, options={}, &block|
+        if block
+          block.call(StringIO.new(html_content))
+        else
+          double(read: html_content)
+        end
+      end
     end
     
     it "extracts article content using Readability" do

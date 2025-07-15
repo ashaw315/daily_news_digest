@@ -15,10 +15,10 @@
 default: &default
   adapter: postgresql
   encoding: unicode
-  # For details on connection pooling, see Rails configuration guide
-  # https://guides.rubyonrails.org/configuring.html#database-pooling
-  pool: 15
+  # Optimized for 512MB memory constraint
+  pool: <%= ENV.fetch("RAILS_MAX_THREADS") { 5 } %>  # Match Puma threads
   reaping_frequency: 10
+  checkout_timeout: 5  # Faster timeout to prevent connection accumulation
 
 development:
   <<: *default

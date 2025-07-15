@@ -1,6 +1,10 @@
 class Admin::EmailMetricsController < Admin::BaseController
   def index
-    @email_metrics = EmailMetric.all.order(created_at: :desc)
+    # Add pagination to prevent memory issues with kaminari
+    @email_metrics = EmailMetric.includes(:user)
+                               .order(created_at: :desc)
+                               .page(params[:page])
+                               .per(50)
     
     @summary = {
       sent: EmailMetric.where(status: 'sent').count,
@@ -9,7 +13,8 @@ class Admin::EmailMetricsController < Admin::BaseController
       failed: EmailMetric.where(status: 'failed').count
     }
     
-    @daily_metrics = EmailMetric.where('created_at > ?', 30.days.ago)
+    # Limit daily metrics to recent data for performance
+    @daily_metrics = EmailMetric.where('created_at > ?', 7.days.ago)
                                .group("DATE(created_at)")
                                .group(:status)
                                .count

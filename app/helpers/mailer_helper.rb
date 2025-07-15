@@ -77,27 +77,36 @@ module MailerHelper
   end
 
   def format_article_for_text(article)
+    title = article.is_a?(Hash) ? article[:title] : article.title
+    url = article.is_a?(Hash) ? article[:url] : article.url
+    
     [
-      article.title,
+      title,
       article_summary(article),
       "#{article_source(article)} | #{article_date(article)}",
-      "Read More"
+      "Read More: #{url}"
     ].join("\n")
   end
 
   def format_article_for_html(article)
+    title = article.is_a?(Hash) ? article[:title] : article.title
+    url = article.is_a?(Hash) ? article[:url] : article.url
+    
     content_tag(:div, class: 'article') do
-      concat content_tag(:h3, article.title, class: 'article-title')
+      concat content_tag(:h3, title, class: 'article-title')
       concat content_tag(:div, article_summary(article), class: 'article-summary')
       concat content_tag(:div, class: 'article-meta') do
         "#{article_source(article)} | #{article_date(article)}"
       end
-      concat link_to('Read More', article.url, class: 'read-more')
+      concat link_to('Read More', url, class: 'read-more')
     end
   end
 
   def group_articles_by_topic(articles)
-    articles.group_by { |article| article.topic || "Other" }
+    articles.group_by { |article| 
+      topic = article.is_a?(Hash) ? article[:topic] : article.topic
+      topic || "Other" 
+    }
   end
 
   def sort_topics(topics)

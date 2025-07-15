@@ -7,6 +7,8 @@ class EnhancedNewsFetcher
   USER_AGENT = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
   ARTICLES_PER_SOURCE = 3
   MIN_CONTENT_LENGTH = 500  # Minimum characters for good summarization
+  MAX_CONTENT_SIZE = 2.megabytes  # Prevent memory overflow on 512MB systems
+  MAX_FEED_SIZE = 5.megabytes     # Limit RSS feed size
 
   def initialize(options = {})
     @options = options
@@ -56,7 +58,16 @@ class EnhancedNewsFetcher
   private
 
   def fetch_feed(url)
-    response = URI.open(url, "User-Agent" => USER_AGENT).read
+    # Limit feed size to prevent memory overflow
+    response = ""
+    URI.open(url, "User-Agent" => USER_AGENT, content_length_proc: lambda { |content_length|
+      if content_length && content_length > MAX_FEED_SIZE
+        raise "Feed too large: #{content_length} bytes (limit: #{MAX_FEED_SIZE})"
+      end
+    }) do |io|
+      response = io.read(MAX_FEED_SIZE)
+    end
+    
     Feedjira.parse(response)
   rescue => e
     Rails.logger.error("[NewsFetcher] Failed to fetch feed: #{e.message}")
@@ -142,7 +153,19 @@ class EnhancedNewsFetcher
     }
     
     begin
-      html = URI.open(url, headers).read.force_encoding('UTF-8')
+      # Limit content size to prevent memory overflow
+      html = ""
+      URI.open(url, headers.merge(
+        content_length_proc: lambda { |content_length|
+          if content_length && content_length > MAX_CONTENT_SIZE
+            Rails.logger.warn("[NewsFetcher] Skipping large page: #{content_length} bytes")
+            return ""
+          end
+        }
+      )) do |io|
+        html = io.read(MAX_CONTENT_SIZE).force_encoding('UTF-8')
+      end
+      
       return "" unless html.valid_encoding?
   
       doc = Nokogiri::HTML(html)

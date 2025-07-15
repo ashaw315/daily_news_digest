@@ -11,11 +11,20 @@ max_threads_count = ENV.fetch("RAILS_MAX_THREADS") { 5 }
 min_threads_count = ENV.fetch("RAILS_MIN_THREADS") { max_threads_count }
 threads min_threads_count, max_threads_count
 
-# Specifies that the worker count should equal the number of processors in production.
+# Optimized for 512MB memory constraint on Render
 if ENV["RAILS_ENV"] == "production"
-  require "concurrent-ruby"
-  worker_count = Integer(ENV.fetch("WEB_CONCURRENCY") { Concurrent.physical_processor_count })
+  # Force single worker mode for memory efficiency on 512MB systems
+  worker_count = Integer(ENV.fetch("WEB_CONCURRENCY") { 1 })
   workers worker_count if worker_count > 1
+  
+  # Enable worker memory monitoring and restart
+  worker_culling_strategy :oldest
+  worker_timeout 60
+  
+  # Log memory usage for monitoring
+  before_fork do
+    Rails.logger.info "Puma master process memory: #{`ps -o rss= -p #{Process.pid}`.to_i / 1024}MB"
+  end
 end
 
 # Specifies the `worker_timeout` threshold that Puma will use to wait before

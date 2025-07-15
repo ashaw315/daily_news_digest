@@ -2,7 +2,8 @@ class Admin::NewsSourcesController < Admin::BaseController
   before_action :set_source, only: [:show, :edit, :update, :destroy, :validate, :preview]
 
   def index
-    @sources = NewsSource.all
+    # Add pagination to prevent memory issues with kaminari
+    @sources = NewsSource.includes(:topic).page(params[:page]).per(20)
   end
 
   def show

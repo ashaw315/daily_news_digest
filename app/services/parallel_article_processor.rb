@@ -4,10 +4,10 @@ require 'timeout'
 # ParallelArticleProcessor - Fast parallel processing for exactly 3 articles
 # Maintains existing AI summary format while reducing processing time from 20s to 6-8s
 class ParallelArticleProcessor
-  # Hard limits and configuration
+  # Hard limits and configuration optimized for 512MB
   MAX_ARTICLES = 3               # Hard limit - never process more than 3 articles
-  MAX_THREADS = ENV.fetch('PARALLEL_MAX_THREADS', 3).to_i
-  MIN_THREADS = ENV.fetch('PARALLEL_MIN_THREADS', 2).to_i
+  MAX_THREADS = Rails.env.production? ? 1 : ENV.fetch('PARALLEL_MAX_THREADS', 2).to_i  # Sequential in production
+  MIN_THREADS = Rails.env.production? ? 1 : ENV.fetch('PARALLEL_MIN_THREADS', 1).to_i
   ARTICLE_TIMEOUT = ENV.fetch('PARALLEL_TIMEOUT', 8).to_i  # 8 seconds per article
   
   attr_reader :errors, :performance_stats
