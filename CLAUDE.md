@@ -1,7 +1,7 @@
 # Claude Instructions for Daily News Digest
 
 ## Project Overview
-This is a Ruby on Rails application for aggregating and managing daily news articles. The application includes admin functionality, news fetching services, and cron job management.
+A Ruby on Rails application for aggregating and managing daily news articles. The application includes admin functionality, news fetching services, and cron job management.
 
 ## Key Commands
 - `rails server` - Start the development server
