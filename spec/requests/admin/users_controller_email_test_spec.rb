@@ -31,6 +31,9 @@ RSpec.describe Admin::UsersController, type: :request do
         # Mock the mailer to track delivery
         mail_double = double('Mail::Message')
         allow(mail_double).to receive(:deliver_now).and_return(true)
+        allow(mail_double).to receive(:from).and_return(['ashaw315@gmail.com'])
+        allow(mail_double).to receive(:to).and_return([test_user.email])
+        allow(mail_double).to receive(:subject).and_return('Test Subject')
         allow(DailyNewsMailer).to receive(:daily_digest).and_return(mail_double)
         
         post send_test_email_admin_user_path(test_user)
@@ -47,6 +50,9 @@ RSpec.describe Admin::UsersController, type: :request do
         # Mock the mailer to raise an SMTP error
         mail_double = double('Mail::Message')
         allow(mail_double).to receive(:deliver_now).and_raise(Net::SMTPAuthenticationError.new('SMTP Authentication failed'))
+        allow(mail_double).to receive(:from).and_return(['ashaw315@gmail.com'])
+        allow(mail_double).to receive(:to).and_return([test_user.email])
+        allow(mail_double).to receive(:subject).and_return('Test Subject')
         allow(DailyNewsMailer).to receive(:daily_digest).and_return(mail_double)
         
         post send_test_email_admin_user_path(test_user)
@@ -59,6 +65,9 @@ RSpec.describe Admin::UsersController, type: :request do
         # Mock the mailer to raise a connection error
         mail_double = double('Mail::Message')
         allow(mail_double).to receive(:deliver_now).and_raise(Errno::ECONNREFUSED.new('Connection refused'))
+        allow(mail_double).to receive(:from).and_return(['ashaw315@gmail.com'])
+        allow(mail_double).to receive(:to).and_return([test_user.email])
+        allow(mail_double).to receive(:subject).and_return('Test Subject')
         allow(DailyNewsMailer).to receive(:daily_digest).and_return(mail_double)
         
         post send_test_email_admin_user_path(test_user)
@@ -80,11 +89,13 @@ RSpec.describe Admin::UsersController, type: :request do
   
   describe 'Email configuration verification' do
     it 'verifies mailer default from address' do
-      expect(ApplicationMailer.default[:from]).to eq('news@dailynewsdigest.com')
+      expected_from = ENV['EMAIL_FROM_ADDRESS'] || 'ashaw315@gmail.com'
+      expect(ApplicationMailer.default[:from]).to eq(expected_from)
     end
     
     it 'verifies daily news mailer from address' do
-      expect(DailyNewsMailer.default[:from]).to eq('news@dailynewsdigest.com')
+      expected_from = ENV['EMAIL_FROM_ADDRESS'] || 'ashaw315@gmail.com'
+      expect(DailyNewsMailer.default[:from]).to eq(expected_from)
     end
   end
 end
