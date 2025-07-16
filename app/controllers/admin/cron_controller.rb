@@ -5,19 +5,25 @@ class Admin::CronController < Admin::BaseController
   skip_before_action :verify_authenticity_token, only: [:purge_articles, :fetch_articles, :schedule_daily_emails, :health]
   
   # Add our own authentication for API/admin access
+  before_action :log_cron_request, except: [:health]
   before_action :authenticate_cron_or_admin, except: [:health]
   
   def purge_articles
     Rails.logger.info "[CRON] Purge articles started - IP: #{request.remote_ip}, User-Agent: #{request.user_agent}"
     start_time = Time.current
     
-    cutoff = 24.hours.ago
-    deleted = Article.where("created_at < ?", cutoff).delete_all
-    
-    duration = (Time.current - start_time).round(2)
-    track_cron_metric("purge_articles", { deleted_count: deleted, duration_seconds: duration })
-    Rails.logger.info "[CRON] Purged #{deleted} articles older than 24 hours in #{duration}s"
-    render_success("Successfully deleted #{deleted} articles older than 24 hours in #{duration}s")
+    begin
+      cutoff = 24.hours.ago
+      deleted = Article.where("created_at < ?", cutoff).delete_all
+      
+      duration = (Time.current - start_time).round(2)
+      track_cron_metric("purge_articles", { deleted_count: deleted, duration_seconds: duration })
+      Rails.logger.info "[CRON] Purged #{deleted} articles older than 24 hours in #{duration}s"
+      render_success("Successfully deleted #{deleted} articles older than 24 hours in #{duration}s")
+    rescue => e
+      Rails.logger.error "[CRON] Article purge failed: #{e.full_message}"
+      render_error("Article purge failed", e)
+    end
   end
 
   def fetch_articles
@@ -72,8 +78,9 @@ class Admin::CronController < Admin::BaseController
     
     with_task_lock("schedule_daily_emails") do
       # Find users who want daily digests and are subscribed
-      users_scope = User.where(is_subscribed: true)
-                       .where("preferences->>'frequency' = ?", 'daily')
+      users_scope = User.joins(:preferences)
+                       .where(is_subscribed: true)
+                       .where(preferences: { email_frequency: 'daily' })
       
       total_users = users_scope.count
       Rails.logger.info "[CRON] Found #{total_users} users for daily emails"
@@ -115,10 +122,21 @@ class Admin::CronController < Admin::BaseController
   end
 
   def health
-    render json: { status: 'ok', timestamp: Time.current.iso8601 }
+    render json: { 
+      status: 'ok', 
+      timestamp: Time.current.iso8601,
+      service: 'daily-news-digest'
+    }
   end
 
   private
+
+  def log_cron_request
+    Rails.logger.info "[CRON] Job triggered: #{action_name} at #{Time.current}"
+    Rails.logger.info "[CRON] User Agent: #{request.user_agent}"
+    Rails.logger.info "[CRON] IP: #{request.remote_ip}"
+    Rails.logger.info "[CRON] Method: #{request.method}"
+  end
 
   def authenticate_cron_or_admin
     api_key = request.headers['X-API-KEY'] || params[:api_key]
@@ -179,10 +197,7 @@ class Admin::CronController < Admin::BaseController
     }
     
     if defined?(@_response) && @_response
-      respond_to do |format|
-        format.json { render json: response }
-        format.html { render plain: message }
-      end
+      render json: response
     else
       # When running from rake task
       puts "\nSuccess: #{message}"
@@ -198,10 +213,7 @@ class Admin::CronController < Admin::BaseController
     }
   
     if defined?(@_response) && @_response
-      respond_to do |format|
-        format.json { render json: response, status: status }
-        format.html { render plain: message, status: status }
-      end
+      render json: response, status: status
     else
       # When running from rake task
       puts "\nError: #{message}"
