@@ -6,19 +6,23 @@ class Admin::CronController < Admin::BaseController
   
   # Add our own authentication for API/admin access
   before_action :authenticate_cron_or_admin
-  before_action :check_task_lock, only: [:fetch_articles, :schedule_daily_emails]
   
   def purge_articles
+    Rails.logger.info "[CRON] Purge articles started - IP: #{request.remote_ip}, User-Agent: #{request.user_agent}"
+    start_time = Time.current
+    
     cutoff = 24.hours.ago
     deleted = Article.where("created_at < ?", cutoff).delete_all
     
-    track_cron_metric("purge_articles", { deleted_count: deleted })
-    Rails.logger.info "[CRON] Purged #{deleted} articles older than 24 hours"
-    render_success("Successfully deleted #{deleted} articles older than 24 hours")
+    duration = (Time.current - start_time).round(2)
+    track_cron_metric("purge_articles", { deleted_count: deleted, duration_seconds: duration })
+    Rails.logger.info "[CRON] Purged #{deleted} articles older than 24 hours in #{duration}s"
+    render_success("Successfully deleted #{deleted} articles older than 24 hours in #{duration}s")
   end
 
   def fetch_articles
-    Rails.logger.info "[CRON] Starting article fetch at #{Time.current}"
+    Rails.logger.info "[CRON] Article fetch started - IP: #{request.remote_ip}, User-Agent: #{request.user_agent}"
+    start_time = Time.current
     
     with_task_lock("fetch_articles") do
       # Get only news sources that have subscribed users
@@ -47,13 +51,15 @@ class Admin::CronController < Admin::BaseController
       articles = fetcher.fetch_articles
       
       # Return a concise success message with counts
+      duration = (Time.current - start_time).round(2)
       track_cron_metric("fetch_articles", {
         source_count: source_count,
-        article_count: articles.length
+        article_count: articles.length,
+        duration_seconds: duration
       })
       
-      Rails.logger.info "[CRON] Articles fetch completed. Fetched #{articles.length} articles from #{source_count} sources for #{subscribed_users_count} subscribed users"
-      render_success("Fetched #{articles.length} articles from #{source_count} sources for #{subscribed_users_count} subscribed users")
+      Rails.logger.info "[CRON] Articles fetch completed in #{duration}s. Fetched #{articles.length} articles from #{source_count} sources for #{subscribed_users_count} subscribed users"
+      render_success("Fetched #{articles.length} articles from #{source_count} sources for #{subscribed_users_count} subscribed users in #{duration}s")
     end
   rescue => e
     Rails.logger.error "[CRON] Articles fetch failed: #{e.full_message}"
@@ -61,15 +67,17 @@ class Admin::CronController < Admin::BaseController
   end
 
   def schedule_daily_emails
-    Rails.logger.info "[CRON] Starting daily email scheduling at #{Time.current}"
+    Rails.logger.info "[CRON] Email scheduling started - IP: #{request.remote_ip}, User-Agent: #{request.user_agent}"
+    start_time = Time.current
     
     with_task_lock("schedule_daily_emails") do
       Rake::Task['scheduler:schedule_daily_emails'].reenable
       Rake::Task['scheduler:schedule_daily_emails'].invoke
       
-      track_cron_metric("schedule_daily_emails")
-      Rails.logger.info "[CRON] Daily emails scheduled at #{Time.current}"
-      render_success("Daily emails scheduled successfully")
+      duration = (Time.current - start_time).round(2)
+      track_cron_metric("schedule_daily_emails", { duration_seconds: duration })
+      Rails.logger.info "[CRON] Daily emails scheduled in #{duration}s"
+      render_success("Daily emails scheduled successfully in #{duration}s")
     end
   rescue => e
     Rails.logger.error "[CRON] Daily email scheduling failed: #{e.full_message}"

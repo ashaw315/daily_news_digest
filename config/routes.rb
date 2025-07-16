@@ -32,10 +32,13 @@ Rails.application.routes.draw do
 
    # Admin routes
    namespace :admin do
-    # Cron job endpoints
+    # Cron job endpoints (both GET and POST for compatibility)
     get 'cron/purge_articles'
+    post 'cron/purge_articles'
     get 'cron/fetch_articles'
+    post 'cron/fetch_articles'
     get 'cron/schedule_daily_emails'
+    post 'cron/schedule_daily_emails'
 
     # Dashboard
     get 'dashboard', to: 'dashboard#index'
