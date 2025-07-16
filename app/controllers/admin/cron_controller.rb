@@ -1,11 +1,11 @@
 class Admin::CronController < Admin::BaseController
   # Skip base controller authentications for API access
-  skip_before_action :authenticate_user!, only: [:purge_articles, :fetch_articles, :schedule_daily_emails]
-  skip_before_action :require_admin, only: [:purge_articles, :fetch_articles, :schedule_daily_emails]
-  skip_before_action :verify_authenticity_token, only: [:purge_articles, :fetch_articles, :schedule_daily_emails]
+  skip_before_action :authenticate_user!, only: [:purge_articles, :fetch_articles, :schedule_daily_emails, :health]
+  skip_before_action :require_admin, only: [:purge_articles, :fetch_articles, :schedule_daily_emails, :health]
+  skip_before_action :verify_authenticity_token, only: [:purge_articles, :fetch_articles, :schedule_daily_emails, :health]
   
   # Add our own authentication for API/admin access
-  before_action :authenticate_cron_or_admin
+  before_action :authenticate_cron_or_admin, except: [:health]
   
   def purge_articles
     Rails.logger.info "[CRON] Purge articles started - IP: #{request.remote_ip}, User-Agent: #{request.user_agent}"
@@ -112,6 +112,10 @@ class Admin::CronController < Admin::BaseController
   rescue => e
     Rails.logger.error "[CRON] Daily email scheduling failed: #{e.full_message}"
     render_error("Daily email scheduling failed", e)
+  end
+
+  def health
+    render json: { status: 'ok', timestamp: Time.current.iso8601 }
   end
 
   private
