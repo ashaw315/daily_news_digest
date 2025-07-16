@@ -48,7 +48,7 @@ class Admin::CronController < Admin::BaseController
       Rails.logger.info "[CRON] Fetching articles from #{source_count} active sources for #{subscribed_users_count} subscribed users"
   
       fetcher = EnhancedNewsFetcher.new(sources: active_sources)
-      articles = fetcher.fetch_articles
+      articles = fetcher.fetch_articles || []
       
       # Return a concise success message with counts
       duration = (Time.current - start_time).round(2)
@@ -71,13 +71,43 @@ class Admin::CronController < Admin::BaseController
     start_time = Time.current
     
     with_task_lock("schedule_daily_emails") do
-      Rake::Task['scheduler:schedule_daily_emails'].reenable
-      Rake::Task['scheduler:schedule_daily_emails'].invoke
+      # Find users who want daily digests and are subscribed
+      users_scope = User.where(is_subscribed: true)
+                       .where("preferences->>'frequency' = ?", 'daily')
+      
+      total_users = users_scope.count
+      Rails.logger.info "[CRON] Found #{total_users} users for daily emails"
+      
+      if total_users == 0
+        Rails.logger.info "[CRON] No users to process"
+        duration = (Time.current - start_time).round(2)
+        track_cron_metric("schedule_daily_emails", { duration_seconds: duration, users_count: 0 })
+        return render_success("No users to process for daily emails in #{duration}s")
+      end
+      
+      count = 0
+      failed_count = 0
+      
+      # Schedule jobs for users
+      users_scope.find_each do |user|
+        begin
+          DailyEmailJob.perform_later(user)
+          count += 1
+        rescue => e
+          Rails.logger.error "[CRON] Failed to schedule job for user #{user.id}: #{e.message}"
+          failed_count += 1
+        end
+      end
       
       duration = (Time.current - start_time).round(2)
-      track_cron_metric("schedule_daily_emails", { duration_seconds: duration })
-      Rails.logger.info "[CRON] Daily emails scheduled in #{duration}s"
-      render_success("Daily emails scheduled successfully in #{duration}s")
+      track_cron_metric("schedule_daily_emails", { 
+        duration_seconds: duration, 
+        users_count: count,
+        failed_count: failed_count
+      })
+      
+      Rails.logger.info "[CRON] Daily emails scheduled in #{duration}s - #{count} users, #{failed_count} failures"
+      render_success("Daily emails scheduled for #{count} users in #{duration}s (#{failed_count} failures)")
     end
   rescue => e
     Rails.logger.error "[CRON] Daily email scheduling failed: #{e.full_message}"
