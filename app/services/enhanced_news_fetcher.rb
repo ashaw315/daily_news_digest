@@ -60,7 +60,10 @@ class EnhancedNewsFetcher
   def fetch_feed(url)
     # Limit feed size to prevent memory overflow
     response = ""
-    URI.open(url, "User-Agent" => USER_AGENT, content_length_proc: lambda { |content_length|
+    URI.open(url, "User-Agent" => USER_AGENT, 
+             read_timeout: 10, 
+             open_timeout: 10, 
+             content_length_proc: lambda { |content_length|
       if content_length && content_length > MAX_FEED_SIZE
         raise "Feed too large: #{content_length} bytes (limit: #{MAX_FEED_SIZE})"
       end
@@ -156,6 +159,8 @@ class EnhancedNewsFetcher
       # Limit content size to prevent memory overflow
       html = ""
       URI.open(url, headers.merge(
+        read_timeout: 15, 
+        open_timeout: 10, 
         content_length_proc: lambda { |content_length|
           if content_length && content_length > MAX_CONTENT_SIZE
             Rails.logger.warn("[NewsFetcher] Skipping large page: #{content_length} bytes")

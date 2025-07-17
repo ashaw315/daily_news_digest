@@ -1,3 +1,5 @@
+require 'timeout'
+
 class Admin::CronController < Admin::BaseController
   # Skip base controller authentications for API access
   skip_before_action :authenticate_user!, only: [:purge_articles, :fetch_articles, :schedule_daily_emails, :health]
@@ -30,7 +32,9 @@ class Admin::CronController < Admin::BaseController
     Rails.logger.info "[CRON] Article fetch started - IP: #{request.remote_ip}, User-Agent: #{request.user_agent}"
     start_time = Time.current
     
-    with_task_lock("fetch_articles") do
+    # Add overall timeout to prevent hanging
+    timeout_result = Timeout.timeout(300) do  # 5 minute timeout
+      with_task_lock("fetch_articles") do
       # Get only news sources that have subscribed users
       active_sources = NewsSource.joins(:users)
                                 .where(users: { is_subscribed: true })
@@ -66,7 +70,13 @@ class Admin::CronController < Admin::BaseController
       
       Rails.logger.info "[CRON] Articles fetch completed in #{duration}s. Fetched #{articles.length} articles from #{source_count} sources for #{subscribed_users_count} subscribed users"
       render_success("Fetched #{articles.length} articles from #{source_count} sources for #{subscribed_users_count} subscribed users in #{duration}s")
+      end
     end
+    
+    timeout_result
+  rescue Timeout::Error => e
+    Rails.logger.error "[CRON] Articles fetch timed out after 5 minutes"
+    render_error("Articles fetch timed out", e)
   rescue => e
     Rails.logger.error "[CRON] Articles fetch failed: #{e.full_message}"
     render_error("Articles fetch failed", e)

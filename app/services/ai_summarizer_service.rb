@@ -99,7 +99,10 @@ class AiSummarizerService
       raise error_msg
     end
     
-    @client = OpenAI::Client.new(access_token: ENV['OPENAI_API_KEY'])
+    @client = OpenAI::Client.new(
+      access_token: ENV['OPENAI_API_KEY'],
+      request_timeout: 30
+    )
     puts "OpenAI client configured successfully"
   rescue => e
     error_msg = "Failed to configure OpenAI client: #{e.message}"
