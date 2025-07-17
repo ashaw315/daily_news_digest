@@ -76,6 +76,7 @@ RSpec.describe Admin::CronController, type: :controller do
         end
 
         it 'logs the request properly' do
+          allow(Rails.logger).to receive(:info).and_call_original
           expect(Rails.logger).to receive(:info).with(/CRON.*Job triggered: purge_articles/)
           expect(Rails.logger).to receive(:info).with(/CRON.*User Agent:/)
           expect(Rails.logger).to receive(:info).with(/CRON.*IP:/)
@@ -165,15 +166,21 @@ RSpec.describe Admin::CronController, type: :controller do
     describe 'POST /admin/cron/schedule_daily_emails' do
       context 'with valid API key' do
         before do
+          # Create required seed data for user callbacks
+          create(:topic, name: 'Technology', active: true)
+          create(:topic, name: 'Business', active: true) 
+          create(:topic, name: 'Politics', active: true)
+          create(:news_source, name: 'Test Source', active: true)
+          
           # Create users with daily email preferences
           user1 = create(:user, is_subscribed: true)
-          create(:preferences, user: user1, email_frequency: 'daily')
+          user1.preferences.update!(email_frequency: 'daily')
           
           user2 = create(:user, is_subscribed: false) # Should be ignored
-          create(:preferences, user: user2, email_frequency: 'daily')
+          user2.preferences.update!(email_frequency: 'daily')
           
           user3 = create(:user, is_subscribed: true) # Should be ignored
-          create(:preferences, user: user3, email_frequency: 'weekly')
+          user3.preferences.update!(email_frequency: 'weekly')
         end
 
         it 'accepts requests from GitHub Actions' do
@@ -185,7 +192,7 @@ RSpec.describe Admin::CronController, type: :controller do
           expect(response).to have_http_status(200)
           json_response = JSON.parse(response.body)
           expect(json_response['status']).to eq('success')
-          expect(json_response['message']).to include('Daily emails scheduled')
+          expect(json_response['message']).to include('Daily emails scheduled for 1 users')
         end
 
         it 'completes within timeout limits' do
@@ -200,8 +207,8 @@ RSpec.describe Admin::CronController, type: :controller do
         end
 
         it 'handles no users gracefully' do
-          # Remove all users
-          User.destroy_all
+          # Remove all users properly (preferences will be deleted via dependent: :destroy)
+          User.joins(:preferences).where('preferences.email_frequency = ?', 'daily').destroy_all
           
           post :schedule_daily_emails, params: { api_key: valid_api_key }
           
@@ -249,7 +256,7 @@ RSpec.describe Admin::CronController, type: :controller do
     end
 
     it 'handles errors gracefully in schedule_daily_emails' do
-      allow(User).to receive(:where).and_raise(StandardError.new('Database error'))
+      allow(User).to receive(:joins).and_raise(StandardError.new('Database error'))
       
       post :schedule_daily_emails, params: { api_key: valid_api_key }
       

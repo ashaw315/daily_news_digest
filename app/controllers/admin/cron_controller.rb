@@ -87,10 +87,11 @@ class Admin::CronController < Admin::BaseController
     start_time = Time.current
     
     with_task_lock("schedule_daily_emails") do
-      # Find users who want daily digests and are subscribed
-      users_scope = User.joins(:preferences)
-                       .where(is_subscribed: true)
-                       .where(preferences: { email_frequency: 'daily' })
+      begin
+        # Find users who want daily digests and are subscribed
+        users_scope = User.joins(:preferences)
+                         .where(is_subscribed: true)
+                         .where('preferences.email_frequency = ?', 'daily')
       
       total_users = users_scope.count
       Rails.logger.info "[CRON] Found #{total_users} users for daily emails"
@@ -123,12 +124,13 @@ class Admin::CronController < Admin::BaseController
         failed_count: failed_count
       })
       
-      Rails.logger.info "[CRON] Daily emails scheduled in #{duration}s - #{count} users, #{failed_count} failures"
-      render_success("Daily emails scheduled for #{count} users in #{duration}s (#{failed_count} failures)")
+        Rails.logger.info "[CRON] Daily emails scheduled in #{duration}s - #{count} users, #{failed_count} failures"
+        render_success("Daily emails scheduled for #{count} users in #{duration}s (#{failed_count} failures)")
+      rescue => e
+        Rails.logger.error "[CRON] Daily email scheduling failed: #{e.full_message}"
+        render_error("Daily email scheduling failed", e)
+      end
     end
-  rescue => e
-    Rails.logger.error "[CRON] Daily email scheduling failed: #{e.full_message}"
-    render_error("Daily email scheduling failed", e)
   end
 
   def health
@@ -157,11 +159,9 @@ class Admin::CronController < Admin::BaseController
         return false
       end
     else
-      authenticate_user!
-      unless current_user&.admin?
-        redirect_to root_path, alert: "You are not authorized to access this area"
-        return false
-      end
+      # For API endpoints, return 401 instead of redirecting
+      render_error("API key required", status: :unauthorized)
+      return false
     end
   end
 
