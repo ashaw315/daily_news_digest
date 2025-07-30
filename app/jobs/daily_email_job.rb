@@ -3,7 +3,7 @@ class DailyEmailJob < ApplicationJob
   
   # Memory safety constants
   MEMORY_LIMIT_MB = 450        # Hard limit to prevent overflow
-  AI_PROCESSING_LIMIT = 10     # Max articles to process with AI
+  AI_PROCESSING_LIMIT = 30     # Max articles to process with AI (3 per source × 10 sources)
   
   # Retry with exponential backoff, but wait at least 1 hour between retries
   retry_on StandardError, wait: 1.hour, attempts: 3, jitter: 0.15

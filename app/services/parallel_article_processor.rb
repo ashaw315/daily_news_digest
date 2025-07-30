@@ -1,11 +1,11 @@
 require 'concurrent-ruby'
 require 'timeout'
 
-# ParallelArticleProcessor - Fast parallel processing for exactly 3 articles
-# Maintains existing AI summary format while reducing processing time from 20s to 6-8s
+# ParallelArticleProcessor - Fast parallel processing for up to 30 articles
+# Maintains existing AI summary format while processing articles from all user sources
 class ParallelArticleProcessor
   # Hard limits and configuration optimized for 512MB
-  MAX_ARTICLES = 3               # Hard limit - never process more than 3 articles
+  MAX_ARTICLES = 30              # Hard limit - process up to 30 articles (3 per source × 10 sources)
   MAX_THREADS = Rails.env.production? ? 1 : ENV.fetch('PARALLEL_MAX_THREADS', 2).to_i  # Sequential in production
   MIN_THREADS = Rails.env.production? ? 1 : ENV.fetch('PARALLEL_MIN_THREADS', 1).to_i
   ARTICLE_TIMEOUT = ENV.fetch('PARALLEL_TIMEOUT', 8).to_i  # 8 seconds per article
@@ -30,12 +30,12 @@ class ParallelArticleProcessor
     Rails.logger.info("PARALLEL: Thread pool created (#{MIN_THREADS}-#{MAX_THREADS} threads)")
   end
   
-  # Main processing method - processes exactly 3 articles in parallel
+  # Main processing method - processes up to 30 articles in parallel
   def process_articles(articles)
     start_time = Time.current
     log_memory_usage("Starting parallel processing")
     
-    # HARD LIMIT: Never process more than 3 articles
+    # HARD LIMIT: Never process more than 30 articles
     articles = articles.take(MAX_ARTICLES)
     Rails.logger.info("PARALLEL: Processing #{articles.length} articles (max #{MAX_ARTICLES})")
     
@@ -51,7 +51,9 @@ class ParallelArticleProcessor
     
     # Wait for all futures with timeout
     processed_articles = []
-    total_timeout = (ARTICLE_TIMEOUT * 2) + 5  # Extra time for parallel completion
+    # In production (sequential), allow more time. In development (parallel), shorter timeout per article
+    multiplier = Rails.env.production? ? articles.length : 2
+    total_timeout = (ARTICLE_TIMEOUT * multiplier) + 10  # Extra buffer time
     
     begin
       Timeout.timeout(total_timeout) do

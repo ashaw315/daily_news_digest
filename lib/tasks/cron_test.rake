@@ -107,8 +107,9 @@ end
       
       begin
         # Get initial counts
-        subscribed_users = User.where(is_subscribed: true)
-                              .where("preferences->>'frequency' = ?", 'daily')
+        subscribed_users = User.joins(:preferences)
+                              .where(is_subscribed: true)
+                              .where('preferences.email_frequency = ?', 'daily')
         
         puts "\nPre-execution stats:"
         puts "- Subscribed users for daily emails: #{subscribed_users.count}"
