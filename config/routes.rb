@@ -42,6 +42,11 @@ Rails.application.routes.draw do
     post 'cron/fetch_articles'
     get 'cron/schedule_daily_emails'
     post 'cron/schedule_daily_emails'
+    
+    # Temporary fix endpoints (remove after fixing production)
+    get 'temp_fix/fix_subscriptions', to: 'temp_fix#fix_subscriptions'
+    get 'temp_fix/fix_single_user/:email', to: 'temp_fix#fix_single_user'
+    get 'temp_fix/fix_single_user', to: 'temp_fix#fix_single_user'
 
     # Dashboard
     get 'dashboard', to: 'dashboard#index'

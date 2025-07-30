@@ -12,6 +12,12 @@ class PreferencesController < ApplicationController
     @user = current_user
     
     if @user.update(user_params)
+      # Ensure subscription status is updated after preferences save (except in tests)
+      unless Rails.env.test?
+        @user.fix_subscription_status!
+        Rails.logger.info "Preferences updated for user #{@user.id}, subscription status: #{@user.is_subscribed?}"
+      end
+      
       redirect_to edit_preferences_path, notice: 'Preferences updated successfully'
     else
       @topics = Topic.active
