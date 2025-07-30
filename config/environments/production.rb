@@ -70,8 +70,8 @@ Rails.application.configure do
   # Use a different cache store in production.
   # config.cache_store = :mem_cache_store
 
-  # Use a real queuing backend for Active Job (and separate queues per environment).
-  # config.active_job.queue_adapter = :resque
+  # Use async adapter for Render free tier (no Redis/Sidekiq available)
+  config.active_job.queue_adapter = :async
   # config.active_job.queue_name_prefix = "daily_news_digest_production"
 
   config.action_mailer.perform_caching = false

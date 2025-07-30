@@ -38,6 +38,7 @@ module DailyNewsDigest
 
     # Don't generate system test files.
     config.generators.system_tests = nil
+    # Queue adapter set per environment (development: sidekiq, production: async)
     config.active_job.queue_adapter = :sidekiq
     config.assets.enabled = true
 
