@@ -79,6 +79,30 @@ class User < ApplicationRecord
   def unsubscribe!
     self.update_columns(is_subscribed: false)
   end
+
+  def subscribe!
+    self.update_columns(is_subscribed: true)
+  end
+
+  def should_be_subscribed?
+    # User should be subscribed if they have news sources and preferences set up
+    user_news_sources.exists? && preferences.present?
+  end
+
+  def fix_subscription_status!
+    # Fix subscription status based on user setup
+    if should_be_subscribed? && !is_subscribed?
+      Rails.logger.info "Setting user #{id} (#{email}) as subscribed - has #{user_news_sources.count} sources"
+      update_column(:is_subscribed, true)
+      true
+    elsif !should_be_subscribed? && is_subscribed?
+      Rails.logger.info "Setting user #{id} (#{email}) as unsubscribed - missing setup"
+      update_column(:is_subscribed, false)
+      false
+    else
+      is_subscribed?
+    end
+  end
   
   private
   
@@ -112,6 +136,9 @@ class User < ApplicationRecord
         dark_mode: false
       )
     end
+    
+    # Set user as subscribed when they have preferences set up
+    update_column(:is_subscribed, true) unless is_subscribed?
     
     Rails.logger.debug "Default preferences created successfully"
   rescue => e
