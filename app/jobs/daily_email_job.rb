@@ -64,6 +64,9 @@ class DailyEmailJob < ApplicationJob
         # Send the email with processed articles
         DailyNewsMailer.daily_digest(user, processed_articles).deliver_now
         
+        # Add delay to prevent Gmail rate limiting (500 emails/day limit)
+        sleep(1) if Rails.env.production?
+        
         final_memory = get_memory_usage_mb
         total_time = (Time.current - start_time).round(2)
         

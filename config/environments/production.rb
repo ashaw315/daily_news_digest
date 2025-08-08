@@ -96,17 +96,18 @@ Rails.application.configure do
     protocol: 'https'
   }
   
-  # SMTP delivery for production emails
+  # SMTP delivery for production emails using Gmail
   config.action_mailer.delivery_method = :smtp
   config.action_mailer.perform_deliveries = true
   config.action_mailer.raise_delivery_errors = true  # Enable error reporting for debugging
   
+  # Gmail SMTP settings (same as development)
   config.action_mailer.smtp_settings = {
-    address: 'smtp.sendgrid.net',
+    address: 'smtp.gmail.com',
     port: 587,
-    domain: 'daily-news-digest.onrender.com',
-    user_name: 'apikey',
-    password: ENV['SENDGRID_API_KEY'],
+    domain: 'gmail.com',
+    user_name: ENV['GMAIL_USERNAME'],
+    password: ENV['GMAIL_APP_PASSWORD'],
     authentication: 'plain',
     enable_starttls_auto: true
   }

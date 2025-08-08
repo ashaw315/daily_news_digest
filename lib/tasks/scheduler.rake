@@ -1,5 +1,9 @@
 namespace :scheduler do
   desc "Schedule daily email jobs for all users who want daily digests"
+  # IMPORTANT: Gmail has sending limits:
+  # - Regular Gmail accounts: 500 emails/day
+  # - Google Workspace accounts: 2,000 emails/day
+  # Monitor user count to ensure we stay within limits
   task schedule_daily_emails: :environment do
     start_time = Time.current
     initial_memory = get_memory_usage_mb
@@ -18,6 +22,9 @@ namespace :scheduler do
       
       total_users = users_scope.count
       Rails.logger.info("[Scheduler] Found #{total_users} users for daily emails")
+      
+      # Log daily email count for Gmail limit monitoring
+      Rails.logger.info("[Scheduler] Sending daily digest to #{total_users} users (Gmail limit: 500/day for regular accounts)")
       
       if total_users == 0
         Rails.logger.info("[Scheduler] No users to process")
