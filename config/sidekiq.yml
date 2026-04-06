@@ -1,6 +1,0 @@
----
-:concurrency: 2  # Reduced from 5 for 512MB limit
-:queues:
-  - [mailers, 1]
-  - [default, 1]
-:timeout: 30  # Faster timeout to prevent memory accumulation 

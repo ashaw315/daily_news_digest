@@ -8,16 +8,15 @@ class DailyEmailJob < ApplicationJob
   # Retry with exponential backoff, but wait at least 1 hour between retries
   retry_on StandardError, wait: 1.hour, attempts: 3, jitter: 0.15
   
-  # After 3 failures, discard the job and purge the user
+  # After 3 failures, discard the job and unsubscribe the user
   discard_on StandardError do |job, error|
     user = job.arguments.first
-    
+
     if user && user.is_a?(User)
-      Rails.logger.error("Email delivery failed 3 times for user #{user.id} (#{user.email}). Purging user record.")
+      Rails.logger.error("Email delivery failed 3 times for user #{user.id} (#{user.email}). Unsubscribing user.")
       Rails.logger.error("Error: #{error.message}")
-      
-      # Purge the user from the database
-      user.destroy
+
+      user.unsubscribe!
     else
       Rails.logger.error("Email delivery failed 3 times but couldn't identify user. Error: #{error.message}")
     end

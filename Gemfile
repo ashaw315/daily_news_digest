@@ -43,12 +43,10 @@ gem 'dotenv-rails', groups: [:development, :test]
 
 # Added gems
 gem "devise", "~> 4.9"
-gem "sidekiq", "~> 7.0"
 gem 'sassc-rails'
 gem 'rubocop', '~> 1.75', require: false
 
 # Background processing
-gem 'sidekiq-failures'
 gem 'whenever', require: false
 
 # News fetching and parsing

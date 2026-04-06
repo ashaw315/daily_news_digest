@@ -67,7 +67,7 @@ RSpec.describe DailyEmailJob, type: :job do
         end
       end
       
-      it "is configured to purge the user after multiple failures" do        
+      it "is configured to unsubscribe the user after multiple failures" do
         # This is a bit of a hack, but we can check if the class responds to a method
         # that would be defined by discard_on
         expect(DailyEmailJob.respond_to?(:discard_on)).to be true

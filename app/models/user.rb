@@ -168,21 +168,4 @@ class User < ApplicationRecord
     fix_subscription_status!
   end
 
-  # def minimum_preferences_selected
-  #   # Skip validation for new records (during registration)
-  #   return if new_record?
-    
-  #   topic_count = topics.size
-  #   source_count = news_sources.size
-
-  #    Rails.logger.debug "VALIDATION: User #{id} has #{topic_count} topics and #{source_count} news sources"
-    
-  #   if topic_count < 3
-  #     errors.add(:topics, "You must select at least 3 topics (you selected #{topic_count})")
-  #   end
-    
-  #   if source_count < 1
-  #     errors.add(:news_sources, "You must select at least 1 news source")
-  #   end
-  # end
 end

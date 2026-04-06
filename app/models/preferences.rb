@@ -13,10 +13,4 @@ class Preferences < ApplicationRecord
   
   # We no longer need the validate_topics method since topics are now managed through the Topic model
   
-  def validate_sources
-    return if sources.blank?
-    valid_sources = Source.active.pluck(:name)
-    invalid_sources = sources - valid_sources
-    errors.add(:sources, "contains invalid sources: #{invalid_sources.join(', ')}") if invalid_sources.any?
-  end
 end
