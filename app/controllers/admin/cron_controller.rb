@@ -169,7 +169,7 @@ class Admin::CronController < Admin::BaseController
     lock_key = "cron_lock:#{task_name}"
     
     if Rails.cache.exist?(lock_key)
-      render_error("Task #{task_name} is already running", status: :conflict)
+      render_error("Task #{task_name} is already running", nil, status: :conflict)
       return
     end
     

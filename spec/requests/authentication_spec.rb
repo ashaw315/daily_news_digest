@@ -27,6 +27,20 @@ RSpec.describe 'Authentication', type: :request do
     end
   end
 
+  describe 'POST /users/password' do
+    it 'sends password reset instructions for a valid email' do
+      ActionMailer::Base.deliveries.clear
+
+      post user_password_path, params: {
+        user: { email: user.email }
+      }
+
+      expect(response).to redirect_to(new_user_session_path)
+      expect(ActionMailer::Base.deliveries.size).to eq(1)
+      expect(ActionMailer::Base.deliveries.last.to).to include(user.email)
+    end
+  end
+
   describe 'protected endpoint without authentication' do
     it 'redirects to sign in for HTML requests' do
       get edit_preferences_path

@@ -27,9 +27,6 @@ gem "stimulus-rails"
 # Build JSON APIs with ease [https://github.com/rails/jbuilder]
 gem "jbuilder"
 
-# Use Redis adapter to run Action Cable in production
-gem "redis", "~> 4.0"
-
 # Windows does not include zoneinfo files, so bundle the tzinfo-data gem
 gem "tzinfo-data", platforms: %i[ mingw mswin x64_mingw jruby ]
 
@@ -97,6 +94,7 @@ group :test do
   gem "rails-controller-testing"
   gem "webmock"
   gem 'webdrivers'  # Moved from production to test-only
+  gem 'playwright-ruby-client'
 end
 
 group :development do

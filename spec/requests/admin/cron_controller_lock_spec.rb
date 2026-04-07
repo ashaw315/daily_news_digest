@@ -23,6 +23,7 @@ RSpec.describe Admin::CronController, 'task locking', type: :request do
       post admin_cron_fetch_articles_path,
            headers: { 'X-API-KEY' => api_key }
 
+      expect(response.status).to eq(409)
       expect(response).to have_http_status(:conflict)
       parsed = JSON.parse(response.body)
       expect(parsed['status']).to eq('error')
@@ -46,6 +47,7 @@ RSpec.describe Admin::CronController, 'task locking', type: :request do
       post admin_cron_schedule_daily_emails_path,
            headers: { 'X-API-KEY' => api_key }
 
+      expect(response.status).to eq(409)
       expect(response).to have_http_status(:conflict)
       parsed = JSON.parse(response.body)
       expect(parsed['message']).to include('already running')
