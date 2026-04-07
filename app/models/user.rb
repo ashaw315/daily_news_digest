@@ -1,8 +1,7 @@
 class User < ApplicationRecord
   # Include default devise modules
   devise :database_authenticatable, :registerable,
-         :recoverable, :rememberable, :validatable,
-         :confirmable
+         :recoverable, :rememberable, :validatable
 
   has_one :email_tracking, dependent: :destroy
   has_one :preferences, dependent: :destroy
