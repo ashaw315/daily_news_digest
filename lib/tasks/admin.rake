@@ -15,15 +15,8 @@ namespace :admin do
       exit
     end
     
-    # Confirm the user if they're not confirmed
-    unless user.confirmed?
-      user.confirm
-      puts "User #{email} has been confirmed"
-    end
-    
     user.update(admin: true)
     puts "User #{email} is now an admin"
-    puts "Confirmed: #{user.confirmed?}"
     puts "Admin: #{user.admin?}"
   end
   
@@ -36,18 +29,14 @@ namespace :admin do
       u.password = password
       u.password_confirmation = password
       u.admin = true
-      u.skip_confirmation! if u.respond_to?(:skip_confirmation!)
     end
     
     if user.persisted?
-      # Make sure they're admin and confirmed
       user.update(admin: true) unless user.admin?
-      user.confirm unless user.confirmed?
-      
+
       puts "Admin user created/updated successfully!"
       puts "Email: #{user.email}"
       puts "Admin: #{user.admin?}"
-      puts "Confirmed: #{user.confirmed?}"
     else
       puts "Error creating admin user:"
       puts user.errors.full_messages
@@ -66,17 +55,14 @@ namespace :admin do
       exit
     end
     
-    # Reset password and confirm user
     user.password = password
     user.password_confirmation = password
     user.admin = true
-    user.confirm if user.respond_to?(:confirm)
-    
+
     if user.save
       puts "User #{email} has been fixed!"
       puts "New password: #{password}"
       puts "Admin: #{user.admin?}"
-      puts "Confirmed: #{user.confirmed?}"
     else
       puts "Error fixing user:"
       puts user.errors.full_messages
@@ -92,7 +78,7 @@ namespace :admin do
     else
       puts "Admin users:"
       admins.each do |admin|
-        puts "- #{admin.email} (Confirmed: #{admin.confirmed?})"
+        puts "- #{admin.email}"
       end
     end
   end
