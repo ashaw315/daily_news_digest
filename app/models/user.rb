@@ -113,41 +113,40 @@ class User < ApplicationRecord
 
   def create_default_preferences
     Rails.logger.debug "Creating default preferences for user #{id}"
-    
+
     # Get the first 3 active topics
     default_topics = Topic.active.limit(3)
     Rails.logger.debug "Default topics: #{default_topics.pluck(:name)}"
-    
+
     # Get the first active news source
     default_source = NewsSource.active.first
     Rails.logger.debug "Default news source: #{default_source&.name}"
-    
+
     # Associate the default topics with the user
     default_topics.each do |topic|
-      user_topics.create!(topic: topic)
+      user_topics.create(topic: topic)
     end
-    
+
     # Associate the default news source with the user
-    user_news_sources.create!(news_source: default_source) if default_source
-    
+    user_news_sources.create(news_source: default_source) if default_source
+
     # Create preferences with default values if they don't exist
     if preferences.nil?
-      create_preferences!(
+      create_preferences(
         email_frequency: 'daily',
         dark_mode: false
       )
     end
-    
+
     # Set user as subscribed when they have preferences set up (except in tests)
     unless Rails.env.test?
       update_column(:is_subscribed, true) unless is_subscribed?
     end
-    
+
     Rails.logger.debug "Default preferences created successfully"
   rescue => e
     Rails.logger.error "Error creating default preferences: #{e.message}"
     Rails.logger.error e.backtrace.join("\n")
-    raise
   end
 
   def must_have_at_least_one_news_source
