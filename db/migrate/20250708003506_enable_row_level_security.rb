@@ -2,7 +2,7 @@ class EnableRowLevelSecurity < ActiveRecord::Migration[7.1]
   def up
     # Check if we're in a Supabase environment (has auth schema)
     is_supabase = connection.schema_exists?('auth')
-    
+
     if is_supabase
       enable_rls_for_supabase
     else
@@ -41,7 +41,7 @@ class EnableRowLevelSecurity < ActiveRecord::Migration[7.1]
     tables_for_rls.each do |table_name|
       execute "ALTER TABLE #{table_name} ENABLE ROW LEVEL SECURITY;"
     end
-    
+
     say "RLS enabled on all tables. When moving to Supabase, run 'rails db:migrate:reset' to apply full policies."
   end
 
@@ -60,26 +60,43 @@ class EnableRowLevelSecurity < ActiveRecord::Migration[7.1]
     create_association_policies
     create_email_policies
     create_api_policies
-    
+
     say "RLS enabled with full Supabase policies."
+  end
+
+  # Wraps CREATE POLICY in a pg_policies existence check so the
+  # migration is idempotent against manually-applied policies.
+  def create_policy_if_not_exists(table, policy_name, policy_sql)
+    execute <<-SQL
+      DO $$
+      BEGIN
+        IF NOT EXISTS (
+          SELECT 1 FROM pg_policies
+          WHERE tablename = '#{table}'
+          AND policyname = '#{policy_name}'
+        ) THEN
+          #{policy_sql}
+        END IF;
+      END $$;
+    SQL
   end
 
   def create_user_policies
     # Users can only access their own records
-    execute <<-SQL
-      CREATE POLICY IF NOT EXISTS "users_own_data" ON users
+    create_policy_if_not_exists('users', 'users_own_data', <<~SQL)
+      CREATE POLICY "users_own_data" ON users
         FOR ALL
         USING (auth.uid()::text = id::text);
     SQL
 
     # Admin users can access all user records
-    execute <<-SQL
-      CREATE POLICY IF NOT EXISTS "admin_full_access" ON users
+    create_policy_if_not_exists('users', 'admin_full_access', <<~SQL)
+      CREATE POLICY "admin_full_access" ON users
         FOR ALL
         USING (
           EXISTS (
-            SELECT 1 FROM users u 
-            WHERE u.id::text = auth.uid()::text 
+            SELECT 1 FROM users u
+            WHERE u.id::text = auth.uid()::text
             AND u.admin = true
           )
         );
@@ -88,20 +105,20 @@ class EnableRowLevelSecurity < ActiveRecord::Migration[7.1]
 
   def create_article_policies
     # All authenticated users can read articles
-    execute <<-SQL
-      CREATE POLICY IF NOT EXISTS "articles_read_all" ON articles
+    create_policy_if_not_exists('articles', 'articles_read_all', <<~SQL)
+      CREATE POLICY "articles_read_all" ON articles
         FOR SELECT
         USING (auth.role() = 'authenticated');
     SQL
 
     # Only admins can modify articles
-    execute <<-SQL
-      CREATE POLICY IF NOT EXISTS "articles_admin_modify" ON articles
+    create_policy_if_not_exists('articles', 'articles_admin_modify', <<~SQL)
+      CREATE POLICY "articles_admin_modify" ON articles
         FOR ALL
         USING (
           EXISTS (
-            SELECT 1 FROM users u 
-            WHERE u.id::text = auth.uid()::text 
+            SELECT 1 FROM users u
+            WHERE u.id::text = auth.uid()::text
             AND u.admin = true
           )
         );
@@ -110,20 +127,20 @@ class EnableRowLevelSecurity < ActiveRecord::Migration[7.1]
 
   def create_news_source_policies
     # All authenticated users can read news sources
-    execute <<-SQL
-      CREATE POLICY IF NOT EXISTS "news_sources_read_all" ON news_sources
+    create_policy_if_not_exists('news_sources', 'news_sources_read_all', <<~SQL)
+      CREATE POLICY "news_sources_read_all" ON news_sources
         FOR SELECT
         USING (auth.role() = 'authenticated');
     SQL
 
     # Only admins can modify news sources
-    execute <<-SQL
-      CREATE POLICY IF NOT EXISTS "news_sources_admin_modify" ON news_sources
+    create_policy_if_not_exists('news_sources', 'news_sources_admin_modify', <<~SQL)
+      CREATE POLICY "news_sources_admin_modify" ON news_sources
         FOR INSERT, UPDATE, DELETE
         USING (
           EXISTS (
-            SELECT 1 FROM users u 
-            WHERE u.id::text = auth.uid()::text 
+            SELECT 1 FROM users u
+            WHERE u.id::text = auth.uid()::text
             AND u.admin = true
           )
         );
@@ -132,20 +149,20 @@ class EnableRowLevelSecurity < ActiveRecord::Migration[7.1]
 
   def create_topic_policies
     # All authenticated users can read topics
-    execute <<-SQL
-      CREATE POLICY IF NOT EXISTS "topics_read_all" ON topics
+    create_policy_if_not_exists('topics', 'topics_read_all', <<~SQL)
+      CREATE POLICY "topics_read_all" ON topics
         FOR SELECT
         USING (auth.role() = 'authenticated');
     SQL
 
     # Only admins can modify topics
-    execute <<-SQL
-      CREATE POLICY IF NOT EXISTS "topics_admin_modify" ON topics
+    create_policy_if_not_exists('topics', 'topics_admin_modify', <<~SQL)
+      CREATE POLICY "topics_admin_modify" ON topics
         FOR INSERT, UPDATE, DELETE
         USING (
           EXISTS (
-            SELECT 1 FROM users u 
-            WHERE u.id::text = auth.uid()::text 
+            SELECT 1 FROM users u
+            WHERE u.id::text = auth.uid()::text
             AND u.admin = true
           )
         );
@@ -154,20 +171,20 @@ class EnableRowLevelSecurity < ActiveRecord::Migration[7.1]
 
   def create_preference_policies
     # Users can only access their own preferences
-    execute <<-SQL
-      CREATE POLICY IF NOT EXISTS "preferences_own_data" ON preferences
+    create_policy_if_not_exists('preferences', 'preferences_own_data', <<~SQL)
+      CREATE POLICY "preferences_own_data" ON preferences
         FOR ALL
         USING (auth.uid()::text = user_id::text);
     SQL
 
     # Admins can access all preferences
-    execute <<-SQL
-      CREATE POLICY IF NOT EXISTS "preferences_admin_access" ON preferences
+    create_policy_if_not_exists('preferences', 'preferences_admin_access', <<~SQL)
+      CREATE POLICY "preferences_admin_access" ON preferences
         FOR ALL
         USING (
           EXISTS (
-            SELECT 1 FROM users u 
-            WHERE u.id::text = auth.uid()::text 
+            SELECT 1 FROM users u
+            WHERE u.id::text = auth.uid()::text
             AND u.admin = true
           )
         );
@@ -176,38 +193,38 @@ class EnableRowLevelSecurity < ActiveRecord::Migration[7.1]
 
   def create_association_policies
     # User-news source associations
-    execute <<-SQL
-      CREATE POLICY IF NOT EXISTS "user_news_sources_own_data" ON user_news_sources
+    create_policy_if_not_exists('user_news_sources', 'user_news_sources_own_data', <<~SQL)
+      CREATE POLICY "user_news_sources_own_data" ON user_news_sources
         FOR ALL
         USING (auth.uid()::text = user_id::text);
     SQL
 
-    execute <<-SQL
-      CREATE POLICY IF NOT EXISTS "user_news_sources_admin_access" ON user_news_sources
+    create_policy_if_not_exists('user_news_sources', 'user_news_sources_admin_access', <<~SQL)
+      CREATE POLICY "user_news_sources_admin_access" ON user_news_sources
         FOR ALL
         USING (
           EXISTS (
-            SELECT 1 FROM users u 
-            WHERE u.id::text = auth.uid()::text 
+            SELECT 1 FROM users u
+            WHERE u.id::text = auth.uid()::text
             AND u.admin = true
           )
         );
     SQL
 
     # User-topic associations
-    execute <<-SQL
-      CREATE POLICY IF NOT EXISTS "user_topics_own_data" ON user_topics
+    create_policy_if_not_exists('user_topics', 'user_topics_own_data', <<~SQL)
+      CREATE POLICY "user_topics_own_data" ON user_topics
         FOR ALL
         USING (auth.uid()::text = user_id::text);
     SQL
 
-    execute <<-SQL
-      CREATE POLICY IF NOT EXISTS "user_topics_admin_access" ON user_topics
+    create_policy_if_not_exists('user_topics', 'user_topics_admin_access', <<~SQL)
+      CREATE POLICY "user_topics_admin_access" ON user_topics
         FOR ALL
         USING (
           EXISTS (
-            SELECT 1 FROM users u 
-            WHERE u.id::text = auth.uid()::text 
+            SELECT 1 FROM users u
+            WHERE u.id::text = auth.uid()::text
             AND u.admin = true
           )
         );
@@ -216,38 +233,38 @@ class EnableRowLevelSecurity < ActiveRecord::Migration[7.1]
 
   def create_email_policies
     # Email tracking - users can only access their own
-    execute <<-SQL
-      CREATE POLICY IF NOT EXISTS "email_trackings_own_data" ON email_trackings
+    create_policy_if_not_exists('email_trackings', 'email_trackings_own_data', <<~SQL)
+      CREATE POLICY "email_trackings_own_data" ON email_trackings
         FOR ALL
         USING (auth.uid()::text = user_id::text);
     SQL
 
-    execute <<-SQL
-      CREATE POLICY IF NOT EXISTS "email_trackings_admin_access" ON email_trackings
+    create_policy_if_not_exists('email_trackings', 'email_trackings_admin_access', <<~SQL)
+      CREATE POLICY "email_trackings_admin_access" ON email_trackings
         FOR ALL
         USING (
           EXISTS (
-            SELECT 1 FROM users u 
-            WHERE u.id::text = auth.uid()::text 
+            SELECT 1 FROM users u
+            WHERE u.id::text = auth.uid()::text
             AND u.admin = true
           )
         );
     SQL
 
     # Email metrics - users can only access their own
-    execute <<-SQL
-      CREATE POLICY IF NOT EXISTS "email_metrics_own_data" ON email_metrics
+    create_policy_if_not_exists('email_metrics', 'email_metrics_own_data', <<~SQL)
+      CREATE POLICY "email_metrics_own_data" ON email_metrics
         FOR ALL
         USING (auth.uid()::text = user_id::text);
     SQL
 
-    execute <<-SQL
-      CREATE POLICY IF NOT EXISTS "email_metrics_admin_access" ON email_metrics
+    create_policy_if_not_exists('email_metrics', 'email_metrics_admin_access', <<~SQL)
+      CREATE POLICY "email_metrics_admin_access" ON email_metrics
         FOR ALL
         USING (
           EXISTS (
-            SELECT 1 FROM users u 
-            WHERE u.id::text = auth.uid()::text 
+            SELECT 1 FROM users u
+            WHERE u.id::text = auth.uid()::text
             AND u.admin = true
           )
         );
@@ -256,13 +273,13 @@ class EnableRowLevelSecurity < ActiveRecord::Migration[7.1]
 
   def create_api_policies
     # API access - only admins can access
-    execute <<-SQL
-      CREATE POLICY IF NOT EXISTS "apis_admin_only" ON apis
+    create_policy_if_not_exists('apis', 'apis_admin_only', <<~SQL)
+      CREATE POLICY "apis_admin_only" ON apis
         FOR ALL
         USING (
           EXISTS (
-            SELECT 1 FROM users u 
-            WHERE u.id::text = auth.uid()::text 
+            SELECT 1 FROM users u
+            WHERE u.id::text = auth.uid()::text
             AND u.admin = true
           )
         );
