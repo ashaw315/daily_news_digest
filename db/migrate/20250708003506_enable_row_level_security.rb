@@ -133,17 +133,31 @@ class EnableRowLevelSecurity < ActiveRecord::Migration[7.1]
         USING (auth.role() = 'authenticated');
     SQL
 
-    # Only admins can modify news sources
-    create_policy_if_not_exists('news_sources', 'news_sources_admin_modify', <<~SQL)
-      CREATE POLICY "news_sources_admin_modify" ON news_sources
-        FOR INSERT, UPDATE, DELETE
-        USING (
-          EXISTS (
+    # Only admins can modify news sources (split per command)
+    admin_check = <<~EXPR
+      EXISTS (
             SELECT 1 FROM users u
             WHERE u.id::text = auth.uid()::text
             AND u.admin = true
           )
-        );
+    EXPR
+
+    create_policy_if_not_exists('news_sources', 'news_sources_admin_insert', <<~SQL)
+      CREATE POLICY "news_sources_admin_insert" ON news_sources
+        FOR INSERT
+        WITH CHECK (#{admin_check});
+    SQL
+
+    create_policy_if_not_exists('news_sources', 'news_sources_admin_update', <<~SQL)
+      CREATE POLICY "news_sources_admin_update" ON news_sources
+        FOR UPDATE
+        USING (#{admin_check});
+    SQL
+
+    create_policy_if_not_exists('news_sources', 'news_sources_admin_delete', <<~SQL)
+      CREATE POLICY "news_sources_admin_delete" ON news_sources
+        FOR DELETE
+        USING (#{admin_check});
     SQL
   end
 
@@ -155,17 +169,31 @@ class EnableRowLevelSecurity < ActiveRecord::Migration[7.1]
         USING (auth.role() = 'authenticated');
     SQL
 
-    # Only admins can modify topics
-    create_policy_if_not_exists('topics', 'topics_admin_modify', <<~SQL)
-      CREATE POLICY "topics_admin_modify" ON topics
-        FOR INSERT, UPDATE, DELETE
-        USING (
-          EXISTS (
+    # Only admins can modify topics (split per command)
+    admin_check = <<~EXPR
+      EXISTS (
             SELECT 1 FROM users u
             WHERE u.id::text = auth.uid()::text
             AND u.admin = true
           )
-        );
+    EXPR
+
+    create_policy_if_not_exists('topics', 'topics_admin_insert', <<~SQL)
+      CREATE POLICY "topics_admin_insert" ON topics
+        FOR INSERT
+        WITH CHECK (#{admin_check});
+    SQL
+
+    create_policy_if_not_exists('topics', 'topics_admin_update', <<~SQL)
+      CREATE POLICY "topics_admin_update" ON topics
+        FOR UPDATE
+        USING (#{admin_check});
+    SQL
+
+    create_policy_if_not_exists('topics', 'topics_admin_delete', <<~SQL)
+      CREATE POLICY "topics_admin_delete" ON topics
+        FOR DELETE
+        USING (#{admin_check});
     SQL
   end
 
