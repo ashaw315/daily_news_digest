@@ -1,0 +1,148 @@
+# Daily News Digest — Scheduled Cron Jobs
+#
+# This workflow triggers the three daily cron endpoints via GitHub Actions.
+# The Render free-tier instance sleeps after inactivity, so each job wakes
+# it up before calling the cron endpoint.
+#
+# Required secret:
+#   CRON_API_KEY — API key for authenticating cron endpoint requests.
+#   Add it at: Settings -> Secrets and variables -> Actions -> New secret
+
+name: Daily Cron Jobs
+
+on:
+  schedule:
+    - cron: '0 7 * * *'   # fetch-articles   — 7:00 AM UTC daily
+    - cron: '0 8 * * *'   # schedule-emails  — 8:00 AM UTC daily
+    - cron: '0 2 * * *'   # purge-articles   — 2:00 AM UTC daily
+  workflow_dispatch:       # Allow manual trigger from Actions UI
+
+env:
+  APP_URL: https://daily-news-digest.onrender.com
+
+jobs:
+  fetch-articles:
+    if: github.event.schedule == '0 7 * * *' || github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Wake up Render instance
+        run: |
+          for i in 1 2 3 4 5; do
+            echo "Attempt $i: GET $APP_URL/health"
+            status=$(curl -s -o /dev/null -w '%{http_code}' "$APP_URL/health" || echo "000")
+            echo "  Response: $status"
+            if [ "$status" = "200" ]; then
+              echo "Render instance is awake"
+              break
+            fi
+            if [ "$i" -lt 5 ]; then
+              echo "  Waiting 30s before retry..."
+              sleep 30
+            else
+              echo "::error::Render instance did not wake up after 5 attempts"
+              exit 1
+            fi
+          done
+
+      - name: Run fetch_articles
+        run: |
+          echo "POST $APP_URL/admin/cron/fetch_articles"
+          response=$(curl -s -w '\n%{http_code}' \
+            -X POST "$APP_URL/admin/cron/fetch_articles" \
+            -H "X-API-KEY: ${{ secrets.CRON_API_KEY }}")
+          body=$(echo "$response" | sed '$d')
+          status=$(echo "$response" | tail -1)
+          echo "Status: $status"
+          echo "Body: $body"
+          if [ "$status" != "200" ] && [ "$status" != "202" ]; then
+            echo "::error::fetch_articles failed with status $status"
+            exit 1
+          fi
+
+      - name: Report result
+        if: always()
+        run: echo "fetch_articles completed"
+
+  schedule-emails:
+    if: github.event.schedule == '0 8 * * *' || github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Wake up Render instance
+        run: |
+          for i in 1 2 3 4 5; do
+            echo "Attempt $i: GET $APP_URL/health"
+            status=$(curl -s -o /dev/null -w '%{http_code}' "$APP_URL/health" || echo "000")
+            echo "  Response: $status"
+            if [ "$status" = "200" ]; then
+              echo "Render instance is awake"
+              break
+            fi
+            if [ "$i" -lt 5 ]; then
+              echo "  Waiting 30s before retry..."
+              sleep 30
+            else
+              echo "::error::Render instance did not wake up after 5 attempts"
+              exit 1
+            fi
+          done
+
+      - name: Run schedule_daily_emails
+        run: |
+          echo "POST $APP_URL/admin/cron/schedule_daily_emails"
+          response=$(curl -s -w '\n%{http_code}' \
+            -X POST "$APP_URL/admin/cron/schedule_daily_emails" \
+            -H "X-API-KEY: ${{ secrets.CRON_API_KEY }}")
+          body=$(echo "$response" | sed '$d')
+          status=$(echo "$response" | tail -1)
+          echo "Status: $status"
+          echo "Body: $body"
+          if [ "$status" != "200" ] && [ "$status" != "202" ]; then
+            echo "::error::schedule_daily_emails failed with status $status"
+            exit 1
+          fi
+
+      - name: Report result
+        if: always()
+        run: echo "schedule_daily_emails completed"
+
+  purge-articles:
+    if: github.event.schedule == '0 2 * * *' || github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Wake up Render instance
+        run: |
+          for i in 1 2 3 4 5; do
+            echo "Attempt $i: GET $APP_URL/health"
+            status=$(curl -s -o /dev/null -w '%{http_code}' "$APP_URL/health" || echo "000")
+            echo "  Response: $status"
+            if [ "$status" = "200" ]; then
+              echo "Render instance is awake"
+              break
+            fi
+            if [ "$i" -lt 5 ]; then
+              echo "  Waiting 30s before retry..."
+              sleep 30
+            else
+              echo "::error::Render instance did not wake up after 5 attempts"
+              exit 1
+            fi
+          done
+
+      - name: Run purge_articles
+        run: |
+          echo "POST $APP_URL/admin/cron/purge_articles"
+          response=$(curl -s -w '\n%{http_code}' \
+            -X POST "$APP_URL/admin/cron/purge_articles" \
+            -H "X-API-KEY: ${{ secrets.CRON_API_KEY }}")
+          body=$(echo "$response" | sed '$d')
+          status=$(echo "$response" | tail -1)
+          echo "Status: $status"
+          echo "Body: $body"
+          if [ "$status" != "200" ] && [ "$status" != "202" ]; then
+            echo "::error::purge_articles failed with status $status"
+            exit 1
+          fi
+
+      - name: Report result
+        if: always()
+        run: echo "purge_articles completed"
