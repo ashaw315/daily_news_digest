@@ -2,11 +2,12 @@ class DailyNewsMailer < ApplicationMailer
   default from: ENV['EMAIL_FROM_ADDRESS'] || "ashaw315@gmail.com"  # Use verified SendGrid sender email
   helper MailerHelper
 
-  def daily_digest(user, articles)
+  def daily_digest(user, articles, tracking_token = nil)
     initial_memory = get_memory_usage_mb
     Rails.logger.info("[DailyNewsMailer] Starting email generation - Memory: #{initial_memory}MB")
-    
+
     @user = user
+    @tracking_token = tracking_token
     
     # Memory-safe article processing
     if articles.present?
@@ -70,8 +71,9 @@ class DailyNewsMailer < ApplicationMailer
     )
   end
 
-  def weekly_digest(user, articles)
+  def weekly_digest(user, articles, tracking_token = nil)
     @user = user
+    @tracking_token = tracking_token
     @articles = articles
     @articles_by_topic = @articles
       .group_by { |article| article.news_source&.topic&.name || "Other" }

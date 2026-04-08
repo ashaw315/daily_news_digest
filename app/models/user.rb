@@ -3,7 +3,7 @@ class User < ApplicationRecord
   devise :database_authenticatable, :registerable,
          :recoverable, :rememberable, :validatable
 
-  has_one :email_tracking, dependent: :destroy
+  has_many :email_trackings, dependent: :destroy
   has_one :preferences, dependent: :destroy
   has_many :email_metrics, dependent: :destroy
   

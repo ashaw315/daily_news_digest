@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2025_07_30_161504) do
+ActiveRecord::Schema[7.1].define(version: 2026_04_08_004640) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
 
@@ -57,6 +57,9 @@ ActiveRecord::Schema[7.1].define(version: 2025_07_30_161504) do
     t.integer "click_count", default: 0
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.string "token"
+    t.datetime "opened_at"
+    t.index ["token"], name: "index_email_trackings_on_token", unique: true
     t.index ["user_id", "created_at"], name: "index_email_trackings_on_user_id_and_created_at"
     t.index ["user_id"], name: "index_email_trackings_on_user_id"
   end

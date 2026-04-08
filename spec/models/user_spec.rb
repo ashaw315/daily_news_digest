@@ -38,7 +38,7 @@ RSpec.describe User, type: :model do
   end
 
   describe 'associations' do
-    it { should have_one(:email_tracking).dependent(:destroy) }
+    it { should have_many(:email_trackings).dependent(:destroy) }
     it { should have_one(:preferences).dependent(:destroy) }
     it { should have_many(:user_topics).dependent(:destroy) }
     it { should have_many(:topics).through(:user_topics) }

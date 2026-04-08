@@ -33,14 +33,12 @@ RSpec.describe WeeklyEmailJob, type: :job do
     it "sends an email to the user" do
       mail_double = double("Mail::Message")
       allow(mail_double).to receive(:deliver_now)
-      
-      # Use DailyNewsMailer instead of WeeklyNewsMailer
-      allow(DailyNewsMailer).to receive(:weekly_digest).with(user, articles).and_return(mail_double)
-      
+
+      allow(DailyNewsMailer).to receive(:weekly_digest).and_return(mail_double)
+
       WeeklyEmailJob.perform_now(user)
-      
-      # Check that DailyNewsMailer was called
-      expect(DailyNewsMailer).to have_received(:weekly_digest).with(user, articles)
+
+      expect(DailyNewsMailer).to have_received(:weekly_digest).with(user, articles, anything)
       expect(mail_double).to have_received(:deliver_now)
     end
     
@@ -49,9 +47,8 @@ RSpec.describe WeeklyEmailJob, type: :job do
         # Setup the mailer to raise an error
         mail_double = double("Mail::Message")
         allow(mail_double).to receive(:deliver_now).and_raise(StandardError.new("Test error"))
-        
-        # Use DailyNewsMailer instead of WeeklyNewsMailer
-        allow(DailyNewsMailer).to receive(:weekly_digest).with(user, articles).and_return(mail_double)
+
+        allow(DailyNewsMailer).to receive(:weekly_digest).and_return(mail_double)
         
         # Expect the job to handle the error (either by raising or returning it)
         begin

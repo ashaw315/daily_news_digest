@@ -39,20 +39,67 @@ RSpec.describe DailyEmailJob, type: :job do
     it "sends an email to the user" do
       mail_double = double("Mail::Message")
       allow(mail_double).to receive(:deliver_now)
-      allow(DailyNewsMailer).to receive(:daily_digest).with(user, articles).and_return(mail_double)
-      
+      allow(DailyNewsMailer).to receive(:daily_digest).and_return(mail_double)
+
       DailyEmailJob.perform_now(user)
-      
-      expect(DailyNewsMailer).to have_received(:daily_digest).with(user, articles)
+
+      expect(DailyNewsMailer).to have_received(:daily_digest).with(user, articles, anything)
       expect(mail_double).to have_received(:deliver_now)
     end
     
+    context "email metric recording" do
+      it "creates an EmailMetric with status 'sent' and an EmailTracking record on success" do
+        mail_double = double("Mail::Message")
+        allow(mail_double).to receive(:deliver_now)
+        allow(DailyNewsMailer).to receive(:daily_digest).and_return(mail_double)
+
+        expect {
+          DailyEmailJob.perform_now(user)
+        }.to change(EmailMetric, :count).by(1)
+         .and change(EmailTracking, :count).by(1)
+
+        metric = EmailMetric.last
+        expect(metric.user).to eq(user)
+        expect(metric.email_type).to eq("daily")
+        expect(metric.status).to eq("sent")
+        expect(metric.sent_at).to be_present
+
+        tracking = EmailTracking.last
+        expect(tracking.user).to eq(user)
+        expect(tracking.token).to be_present
+        expect(tracking.open_count).to eq(0)
+      end
+
+      it "creates an EmailMetric with status 'failed' when delivery raises" do
+        mail_double = double("Mail::Message")
+        allow(mail_double).to receive(:deliver_now).and_raise(StandardError.new("SMTP error"))
+        allow(DailyNewsMailer).to receive(:daily_digest).and_return(mail_double)
+
+        expect {
+          DailyEmailJob.perform_now(user) rescue nil
+        }.to change(EmailMetric, :count).by(1)
+
+        metric = EmailMetric.last
+        expect(metric.status).to eq("failed")
+      end
+
+      it "still delivers email when metric recording fails" do
+        mail_double = double("Mail::Message")
+        allow(mail_double).to receive(:deliver_now)
+        allow(DailyNewsMailer).to receive(:daily_digest).and_return(mail_double)
+        allow(EmailMetric).to receive(:create!).and_raise(ActiveRecord::RecordInvalid)
+
+        expect { DailyEmailJob.perform_now(user) }.not_to raise_error
+        expect(mail_double).to have_received(:deliver_now)
+      end
+    end
+
     context "when email delivery fails" do
       it "handles errors from the mailer" do
         # Setup the mailer to raise an error
         mail_double = double("Mail::Message")
         allow(mail_double).to receive(:deliver_now).and_raise(StandardError.new("Test error"))
-        allow(DailyNewsMailer).to receive(:daily_digest).with(user, articles).and_return(mail_double)
+        allow(DailyNewsMailer).to receive(:daily_digest).and_return(mail_double)
         
         # Expect the job to handle the error (either by raising or returning it)
         begin

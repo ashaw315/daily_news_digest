@@ -60,15 +60,21 @@ class DailyEmailJob < ApplicationJob
           Rails.logger.info("[DailyEmailJob] After GC: #{pre_email_memory}MB → #{post_gc_memory}MB")
         end
         
+        # Create tracking record for open tracking
+        tracking = create_tracking_record(user)
+
         # Send the email with processed articles
-        DailyNewsMailer.daily_digest(user, processed_articles).deliver_now
-        
+        DailyNewsMailer.daily_digest(user, processed_articles, tracking&.token).deliver_now
+
+        # Record successful send metric
+        record_metric(user, "daily", "sent")
+
         # Add delay to prevent Gmail rate limiting (500 emails/day limit)
         sleep(1) if Rails.env.production?
-        
+
         final_memory = get_memory_usage_mb
         total_time = (Time.current - start_time).round(2)
-        
+
         Rails.logger.info("[DailyEmailJob] Completed user #{user.id} in #{total_time}s - Memory: #{initial_memory}MB → #{final_memory}MB")
       else
         Rails.logger.info("[DailyEmailJob] No articles for user #{user.id}")
@@ -77,6 +83,7 @@ class DailyEmailJob < ApplicationJob
     rescue => e
       error_memory = get_memory_usage_mb
       Rails.logger.error("[DailyEmailJob] Error for user #{user.id} at #{error_memory}MB: #{e.message}")
+      record_metric(user, "daily", "failed")
       raise e
     ensure
       # Force cleanup
@@ -121,6 +128,25 @@ class DailyEmailJob < ApplicationJob
     end
   end
   
+  def create_tracking_record(user)
+    EmailTracking.create!(user: user, open_count: 0, click_count: 0)
+  rescue => e
+    Rails.logger.error("[DailyEmailJob] Failed to create tracking record: #{e.message}")
+    nil
+  end
+
+  def record_metric(user, email_type, status)
+    EmailMetric.create!(
+      user: user,
+      email_type: email_type,
+      status: status,
+      subject: "Your Daily News Digest - #{Date.today.strftime('%B %d, %Y')}",
+      sent_at: Time.current
+    )
+  rescue => e
+    Rails.logger.error("[DailyEmailJob] Failed to record metric: #{e.message}")
+  end
+
   def get_memory_usage_mb
     rss_kb = `ps -o rss= -p #{Process.pid}`.to_i
     (rss_kb / 1024.0).round(2)
