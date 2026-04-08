@@ -9,7 +9,7 @@ GITHUB_URL: https://github.com/ashaw315/daily_news_digest
 
 ## Description
 
-Daily News Digest solves a simple problem: most news aggregators show you everything. This one only fetches what someone is actually waiting to read. Users sign up, choose their RSS sources, and receive a formatted email digest — daily or weekly — with AI-generated summaries of each article.
+Daily News Digest solves a simple problem: most news aggregators show you everything. This one only fetches what someone is actually waiting to read. Users sign up, choose their RSS sources, and receive a daily email digest with AI-generated summaries of each article.
 
 The application handles the full pipeline: scheduled fetching from RSS feeds, full-text extraction with Readability, summarization via OpenAI, and email delivery through Resend. An admin interface provides source management with live RSS validation, article previews with AI summaries, user administration, and email delivery metrics.
 

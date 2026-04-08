@@ -104,9 +104,6 @@ RSpec.describe "End-to-End Integration (Playwright)", type: :request do
         # Check the RSS source checkbox
         page.check("#source_#{rss_source.id}")
 
-        # Select daily frequency
-        page.check("#frequency_daily")
-
         page.expect_navigation do
           page.click('input[type="submit"][value="Save Preferences"]')
         end
@@ -116,7 +113,6 @@ RSpec.describe "End-to-End Integration (Playwright)", type: :request do
         # Verify preferences persisted
         user.reload
         expect(user.news_sources).to include(rss_source)
-        expect(user.preferences.email_frequency).to eq("daily")
       end
     end
   end

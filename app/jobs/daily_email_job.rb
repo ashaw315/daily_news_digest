@@ -31,9 +31,6 @@ class DailyEmailJob < ApplicationJob
       # Skip if user is not subscribed
       return unless user.is_subscribed
       
-      # Skip if user prefers weekly emails
-      return unless user.email_frequency == 'daily'
-      
       # Memory safety check
       if initial_memory > MEMORY_LIMIT_MB
         Rails.logger.error("[DailyEmailJob] Memory too high: #{initial_memory}MB, skipping user #{user.id}")

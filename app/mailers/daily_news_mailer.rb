@@ -70,20 +70,6 @@ class DailyNewsMailer < ApplicationMailer
     )
   end
 
-  def weekly_digest(user, articles)
-    @user = user
-    @articles = articles
-    @articles_by_topic = @articles
-      .group_by { |article| article.topic.presence || "Other" }
-      .transform_values { |arts| arts.sort_by(&:publish_date).reverse }
-    @sorted_topics = @articles_by_topic.keys.compact.sort
-
-    mail(
-      to: @user.email,
-      subject: "Your Daily News Digest - #{Date.today.strftime('%B %d, %Y')}"
-    )
-  end
-  
   private
   
   # Normalize articles to consistent format and free memory

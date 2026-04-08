@@ -178,15 +178,15 @@ RSpec.describe Admin::CronController, type: :controller do
           create(:topic, name: 'Politics', active: true)
           create(:news_source, name: 'Test Source', active: true)
           
-          # Create users with daily email preferences
+          # Create subscribed and unsubscribed users
           user1 = create(:user, is_subscribed: true)
           user1.preferences.update!(email_frequency: 'daily')
-          
+
           user2 = create(:user, is_subscribed: false) # Should be ignored
           user2.preferences.update!(email_frequency: 'daily')
-          
-          user3 = create(:user, is_subscribed: true) # Should be ignored
-          user3.preferences.update!(email_frequency: 'weekly')
+
+          user3 = create(:user, is_subscribed: false) # Should be ignored
+          user3.preferences.update!(email_frequency: 'daily')
         end
 
         it 'accepts requests from GitHub Actions' do
@@ -214,8 +214,8 @@ RSpec.describe Admin::CronController, type: :controller do
         end
 
         it 'handles no users gracefully' do
-          # Remove all users properly (preferences will be deleted via dependent: :destroy)
-          User.joins(:preferences).where('preferences.email_frequency = ?', 'daily').destroy_all
+          # Remove all subscribed users
+          User.where(is_subscribed: true).destroy_all
           
           post :schedule_daily_emails, params: { api_key: valid_api_key }
           
@@ -264,7 +264,7 @@ RSpec.describe Admin::CronController, type: :controller do
     end
 
     it 'handles errors gracefully in schedule_daily_emails' do
-      allow(User).to receive(:joins).and_raise(StandardError.new('Database error'))
+      allow(User).to receive(:where).and_raise(StandardError.new('Database error'))
       
       post :schedule_daily_emails, params: { api_key: valid_api_key }
       

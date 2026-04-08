@@ -6,7 +6,7 @@ class Preferences < ApplicationRecord
   serialize :sources, type: Array, coder: JSON
   
   # Define valid options
-  VALID_FREQUENCIES = ['daily', 'weekly'].freeze
+  VALID_FREQUENCIES = ['daily'].freeze
   
   # Validations
   validates :email_frequency, inclusion: { in: VALID_FREQUENCIES }

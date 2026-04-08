@@ -87,7 +87,7 @@ RSpec.describe "Preferences", type: :request do
         user.news_sources << news_api_source
         
         # Update preferences record
-        user.preferences.update!(email_frequency: 'weekly')
+        user.preferences.update!(email_frequency: 'daily')
         
         # Verify setup
         user.reload

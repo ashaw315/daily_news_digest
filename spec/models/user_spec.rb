@@ -135,8 +135,7 @@ RSpec.describe User, type: :model do
     
     describe '#email_frequency' do
       it 'returns the email frequency from preferences' do
-        user.preferences.update(email_frequency: 'weekly')
-        expect(user.email_frequency).to eq('weekly')
+        expect(user.email_frequency).to eq('daily')
       end
     end
     

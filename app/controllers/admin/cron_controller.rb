@@ -88,10 +88,8 @@ class Admin::CronController < Admin::BaseController
     
     with_task_lock("schedule_daily_emails") do
       begin
-        # Find users who want daily digests and are subscribed
-        users_scope = User.joins(:preferences)
-                         .where(is_subscribed: true)
-                         .where('preferences.email_frequency = ?', 'daily')
+        # Find all subscribed users
+        users_scope = User.where(is_subscribed: true)
       
       total_users = users_scope.count
       Rails.logger.info "[CRON] Found #{total_users} users for daily emails"
