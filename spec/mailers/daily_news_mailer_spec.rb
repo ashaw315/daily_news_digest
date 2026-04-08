@@ -44,7 +44,7 @@ RSpec.describe DailyNewsMailer, type: :mailer do
     let(:mail) { DailyNewsMailer.daily_digest(user, articles) }
 
     it "renders the headers" do
-      expected_from = ENV['EMAIL_FROM_ADDRESS'] || 'ashaw315@gmail.com'
+      expected_from = ENV['EMAIL_FROM_ADDRESS'] || 'onboarding@resend.dev'
       expect(mail.subject).to eq("Your Daily News Digest - #{Date.today.strftime('%B %d, %Y')}")
       expect(mail.to).to eq(['user@example.com'])
       expect(mail.from).to eq([expected_from])

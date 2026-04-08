@@ -1,5 +1,5 @@
 class DailyNewsMailer < ApplicationMailer
-  default from: ENV['EMAIL_FROM_ADDRESS'] || "ashaw315@gmail.com"  # Use verified SendGrid sender email
+  default from: ENV['EMAIL_FROM_ADDRESS'] || "onboarding@resend.dev"
   helper MailerHelper
 
   def daily_digest(user, articles, tracking_token = nil)
@@ -34,7 +34,7 @@ class DailyNewsMailer < ApplicationMailer
     mail(
       to: @user.email,
       subject: "Your Daily News Digest - #{Date.today.strftime('%B %d, %Y')}",
-      reply_to: ENV['EMAIL_FROM_ADDRESS'] || 'ashaw315@gmail.com'
+      reply_to: ENV['EMAIL_FROM_ADDRESS'] || 'onboarding@resend.dev'
     )
   end
 

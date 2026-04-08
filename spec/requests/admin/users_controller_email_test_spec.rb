@@ -31,7 +31,7 @@ RSpec.describe Admin::UsersController, type: :request do
         # Mock the mailer to track delivery
         mail_double = double('Mail::Message')
         allow(mail_double).to receive(:deliver_now).and_return(true)
-        allow(mail_double).to receive(:from).and_return(['ashaw315@gmail.com'])
+        allow(mail_double).to receive(:from).and_return(['onboarding@resend.dev'])
         allow(mail_double).to receive(:to).and_return([test_user.email])
         allow(mail_double).to receive(:subject).and_return('Test Subject')
         allow(DailyNewsMailer).to receive(:daily_digest).and_return(mail_double)
@@ -46,26 +46,25 @@ RSpec.describe Admin::UsersController, type: :request do
     end
 
     context 'when email delivery fails' do
-      it 'handles SMTP errors gracefully' do
-        # Mock the mailer to raise an SMTP error
+      it 'handles delivery errors gracefully' do
         mail_double = double('Mail::Message')
-        allow(mail_double).to receive(:deliver_now).and_raise(Net::SMTPAuthenticationError.new('SMTP Authentication failed'))
-        allow(mail_double).to receive(:from).and_return(['ashaw315@gmail.com'])
+        allow(mail_double).to receive(:deliver_now).and_raise(StandardError.new('Delivery failed'))
+        allow(mail_double).to receive(:from).and_return(['onboarding@resend.dev'])
         allow(mail_double).to receive(:to).and_return([test_user.email])
         allow(mail_double).to receive(:subject).and_return('Test Subject')
         allow(DailyNewsMailer).to receive(:daily_digest).and_return(mail_double)
-        
+
         post send_test_email_admin_user_path(test_user)
-        
+
         expect(response).to redirect_to(admin_user_path(test_user))
-        expect(flash[:alert]).to eq('Failed to send test email: SMTP Authentication failed')
+        expect(flash[:alert]).to eq('Failed to send test email: Delivery failed')
       end
       
       it 'handles connection errors gracefully' do
         # Mock the mailer to raise a connection error
         mail_double = double('Mail::Message')
         allow(mail_double).to receive(:deliver_now).and_raise(Errno::ECONNREFUSED.new('Connection refused'))
-        allow(mail_double).to receive(:from).and_return(['ashaw315@gmail.com'])
+        allow(mail_double).to receive(:from).and_return(['onboarding@resend.dev'])
         allow(mail_double).to receive(:to).and_return([test_user.email])
         allow(mail_double).to receive(:subject).and_return('Test Subject')
         allow(DailyNewsMailer).to receive(:daily_digest).and_return(mail_double)
@@ -89,12 +88,12 @@ RSpec.describe Admin::UsersController, type: :request do
   
   describe 'Email configuration verification' do
     it 'verifies mailer default from address' do
-      expected_from = ENV['EMAIL_FROM_ADDRESS'] || 'ashaw315@gmail.com'
+      expected_from = ENV['EMAIL_FROM_ADDRESS'] || 'onboarding@resend.dev'
       expect(ApplicationMailer.default[:from]).to eq(expected_from)
     end
     
     it 'verifies daily news mailer from address' do
-      expected_from = ENV['EMAIL_FROM_ADDRESS'] || 'ashaw315@gmail.com'
+      expected_from = ENV['EMAIL_FROM_ADDRESS'] || 'onboarding@resend.dev'
       expect(DailyNewsMailer.default[:from]).to eq(expected_from)
     end
   end

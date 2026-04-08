@@ -28,10 +28,7 @@ class Admin::UsersController < Admin::BaseController
       Rails.logger.info("[ADMIN] Perform deliveries: #{ActionMailer::Base.perform_deliveries}")
       Rails.logger.info("[ADMIN] Raise delivery errors: #{ActionMailer::Base.raise_delivery_errors}")
       
-      if ActionMailer::Base.delivery_method == :smtp
-        Rails.logger.info("[ADMIN] SMTP settings: #{ActionMailer::Base.smtp_settings.inspect}")
-        Rails.logger.info("[ADMIN] SendGrid API key present: #{ENV['SENDGRID_API_KEY'].present?}")
-      end
+      Rails.logger.info("[ADMIN] Resend API key present: #{ENV['RESEND_API_KEY'].present?}")
       
       sources = user.news_sources
       Rails.logger.info("[ADMIN] User has #{sources.count} subscribed news sources")
