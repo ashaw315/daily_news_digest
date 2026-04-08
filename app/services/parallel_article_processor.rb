@@ -142,7 +142,10 @@ class ParallelArticleProcessor
         end
         
         processed_article[:summary] = summary || generate_fallback_summary(content)
-        
+
+        # Classify the article by topic using AI
+        processed_article[:topic] = classify_article(article, processed_article)
+
         # Add processing metadata
         processing_time = ((Time.current - article_start_time) * 1000).round(2)
         processed_article[:processing_time_ms] = processing_time
@@ -266,6 +269,37 @@ class ParallelArticleProcessor
     end
   end
   
+  # Classify article topic using AI, update the DB record if possible
+  def classify_article(original_article, processed_article)
+    title = processed_article[:title]
+    summary = processed_article[:summary]
+
+    return extract_existing_topic(original_article) if summary.blank?
+
+    classifier = @@shared_classifier ||= ArticleClassifierService.new
+    category = classifier.classify(title: title, summary: summary)
+
+    # Update the database record if the original is an Article model
+    if original_article.is_a?(Article)
+      original_article.update_column(:topic, category)
+    end
+
+    category
+  rescue => e
+    Rails.logger.error("[ParallelArticleProcessor] Classification failed: #{e.message}")
+    extract_existing_topic(original_article)
+  end
+
+  # Extract existing topic from article as fallback
+  def extract_existing_topic(article)
+    case article
+    when Hash
+      article[:topic] || article['topic'] || 'World'
+    else
+      article.respond_to?(:topic) && article.topic.present? ? article.topic : 'World'
+    end
+  end
+
   # Generate fallback summary using existing format (first 150 chars + "...")
   def generate_fallback_summary(content)
     return "Summary not available" if content.blank?

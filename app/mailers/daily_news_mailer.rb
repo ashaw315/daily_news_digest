@@ -76,7 +76,7 @@ class DailyNewsMailer < ApplicationMailer
     @tracking_token = tracking_token
     @articles = articles
     @articles_by_topic = @articles
-      .group_by { |article| article.news_source&.topic&.name || "Other" }
+      .group_by { |article| article.topic.presence || "Other" }
       .transform_values { |arts| arts.sort_by(&:publish_date).reverse }
     @sorted_topics = @articles_by_topic.keys.compact.sort
 
