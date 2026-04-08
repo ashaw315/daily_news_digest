@@ -119,11 +119,12 @@ RSpec.describe Admin::CronController, type: :controller do
         end
 
         it 'accepts requests from GitHub Actions' do
-          # Mock the article fetcher to avoid external HTTP calls
-          allow_any_instance_of(EnhancedNewsFetcher).to receive(:fetch_articles).and_return([])
-          
+          # Stub the fetcher instance to avoid OpenAI client initialization
+          fetcher = instance_double(EnhancedNewsFetcher, fetch_articles: [])
+          allow(EnhancedNewsFetcher).to receive(:new).and_return(fetcher)
+
           post :fetch_articles, params: { api_key: valid_api_key }
-          
+
           expect(response).to have_http_status(200)
           json_response = JSON.parse(response.body)
           expect(json_response['status']).to eq('success')
@@ -131,13 +132,14 @@ RSpec.describe Admin::CronController, type: :controller do
         end
 
         it 'completes within timeout limits' do
-          # Mock the article fetcher to respond quickly
-          allow_any_instance_of(EnhancedNewsFetcher).to receive(:fetch_articles).and_return([])
-          
+          # Stub the fetcher instance to avoid OpenAI client initialization
+          fetcher = instance_double(EnhancedNewsFetcher, fetch_articles: [])
+          allow(EnhancedNewsFetcher).to receive(:new).and_return(fetcher)
+
           start_time = Time.current
           post :fetch_articles, params: { api_key: valid_api_key }
           end_time = Time.current
-          
+
           expect(response).to have_http_status(200)
           expect(end_time - start_time).to be < 5.minutes
         end

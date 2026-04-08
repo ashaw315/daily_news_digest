@@ -71,11 +71,14 @@ jobs:
     - name: Create screenshots directory
       run: mkdir -p tmp/capybara
     
+    - name: Install Playwright browsers
+      run: npx playwright@$(bundle exec ruby -e "require 'playwright'; puts Playwright::COMPATIBLE_PLAYWRIGHT_VERSION") install chromium
+
     - name: Set up database
       run: |
         bundle exec rails db:create
         bundle exec rails db:schema:load
-    
+
     - name: Run tests
       run: |
         chromedriver --version
@@ -85,8 +88,8 @@ jobs:
 
     - name: Upload screenshots on failure
       if: failure()
-      uses: actions/upload-pages-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: capybara-screenshots
         path: tmp/capybara
-        if-no-files-found: ignore  # Don't fail if no screenshots
+        if-no-files-found: ignore
