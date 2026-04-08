@@ -24,9 +24,6 @@ Rails.application.routes.draw do
     # Articles
     resources :articles, only: [:index, :show]
 
-  # Email tracking
-  get 'email/track/:token', to: 'email_tracking#track', as: 'email_tracking'
-
   # Unsubscribe
   get 'unsubscribe/:token', to: 'subscriptions#unsubscribe', as: 'unsubscribe'
 

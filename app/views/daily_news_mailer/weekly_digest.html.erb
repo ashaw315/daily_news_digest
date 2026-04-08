@@ -129,8 +129,5 @@
     </p>
     <p>© <%= Date.today.year %> Your News App. All rights reserved.</p>
   </div>
-  <% if @tracking_token.present? %>
-    <img src="<%= email_tracking_url(token: @tracking_token) %>" width="1" height="1" style="display:none;" alt="" />
-  <% end %>
 </body>
 </html>

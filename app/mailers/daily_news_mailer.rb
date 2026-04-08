@@ -2,12 +2,11 @@ class DailyNewsMailer < ApplicationMailer
   default from: ENV['EMAIL_FROM_ADDRESS'] || "onboarding@resend.dev"
   helper MailerHelper
 
-  def daily_digest(user, articles, tracking_token = nil)
+  def daily_digest(user, articles)
     initial_memory = get_memory_usage_mb
     Rails.logger.info("[DailyNewsMailer] Starting email generation - Memory: #{initial_memory}MB")
 
     @user = user
-    @tracking_token = tracking_token
     
     # Memory-safe article processing
     if articles.present?
@@ -71,9 +70,8 @@ class DailyNewsMailer < ApplicationMailer
     )
   end
 
-  def weekly_digest(user, articles, tracking_token = nil)
+  def weekly_digest(user, articles)
     @user = user
-    @tracking_token = tracking_token
     @articles = articles
     @articles_by_topic = @articles
       .group_by { |article| article.topic.presence || "Other" }

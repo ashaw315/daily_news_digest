@@ -30,11 +30,8 @@ class WeeklyEmailJob < ApplicationJob
     # Fetch articles based on user preferences (with days: 7)
     articles = ArticleFetcher.fetch_for_user(user, days: 7)
 
-    # Create tracking record for open tracking
-    tracking = create_tracking_record(user)
-
     # Send the email
-    DailyNewsMailer.weekly_digest(user, articles, tracking&.token).deliver_now
+    DailyNewsMailer.weekly_digest(user, articles).deliver_now
 
     # Record successful send metric
     record_metric(user, "weekly")
@@ -46,13 +43,6 @@ class WeeklyEmailJob < ApplicationJob
   end
 
   private
-
-  def create_tracking_record(user)
-    EmailTracking.create!(user: user, open_count: 0, click_count: 0)
-  rescue => e
-    Rails.logger.error("[WeeklyEmailJob] Failed to create tracking record: #{e.message}")
-    nil
-  end
 
   def record_metric(user, email_type, status = "sent")
     EmailMetric.create!(

@@ -38,7 +38,7 @@ RSpec.describe WeeklyEmailJob, type: :job do
 
       WeeklyEmailJob.perform_now(user)
 
-      expect(DailyNewsMailer).to have_received(:weekly_digest).with(user, articles, anything)
+      expect(DailyNewsMailer).to have_received(:weekly_digest).with(user, articles)
       expect(mail_double).to have_received(:deliver_now)
     end
     

@@ -43,12 +43,12 @@ RSpec.describe DailyEmailJob, type: :job do
 
       DailyEmailJob.perform_now(user)
 
-      expect(DailyNewsMailer).to have_received(:daily_digest).with(user, articles, anything)
+      expect(DailyNewsMailer).to have_received(:daily_digest).with(user, articles)
       expect(mail_double).to have_received(:deliver_now)
     end
     
     context "email metric recording" do
-      it "creates an EmailMetric with status 'sent' and an EmailTracking record on success" do
+      it "creates an EmailMetric with status 'sent' on success" do
         mail_double = double("Mail::Message")
         allow(mail_double).to receive(:deliver_now)
         allow(DailyNewsMailer).to receive(:daily_digest).and_return(mail_double)
@@ -56,18 +56,12 @@ RSpec.describe DailyEmailJob, type: :job do
         expect {
           DailyEmailJob.perform_now(user)
         }.to change(EmailMetric, :count).by(1)
-         .and change(EmailTracking, :count).by(1)
 
         metric = EmailMetric.last
         expect(metric.user).to eq(user)
         expect(metric.email_type).to eq("daily")
         expect(metric.status).to eq("sent")
         expect(metric.sent_at).to be_present
-
-        tracking = EmailTracking.last
-        expect(tracking.user).to eq(user)
-        expect(tracking.token).to be_present
-        expect(tracking.open_count).to eq(0)
       end
 
       it "creates an EmailMetric with status 'failed' when delivery raises" do

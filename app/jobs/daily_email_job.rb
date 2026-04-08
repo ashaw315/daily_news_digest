@@ -60,11 +60,8 @@ class DailyEmailJob < ApplicationJob
           Rails.logger.info("[DailyEmailJob] After GC: #{pre_email_memory}MB → #{post_gc_memory}MB")
         end
         
-        # Create tracking record for open tracking
-        tracking = create_tracking_record(user)
-
         # Send the email with processed articles
-        DailyNewsMailer.daily_digest(user, processed_articles, tracking&.token).deliver_now
+        DailyNewsMailer.daily_digest(user, processed_articles).deliver_now
 
         # Record successful send metric
         record_metric(user, "daily", "sent")
@@ -128,13 +125,6 @@ class DailyEmailJob < ApplicationJob
     end
   end
   
-  def create_tracking_record(user)
-    EmailTracking.create!(user: user, open_count: 0, click_count: 0)
-  rescue => e
-    Rails.logger.error("[DailyEmailJob] Failed to create tracking record: #{e.message}")
-    nil
-  end
-
   def record_metric(user, email_type, status)
     EmailMetric.create!(
       user: user,
